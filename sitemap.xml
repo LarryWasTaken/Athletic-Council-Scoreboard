@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- Home page -->
+  <url>
+    <loc>https://gfss-ac.vercel.app/</loc>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Sports pages -->
+  <url>
+    <loc>https://gfss-ac.vercel.app/basketball.html</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gfss-ac.vercel.app/badminton.html</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gfss-ac.vercel.app/cricket.html</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://gfss-ac.vercel.app/volleyball.html</loc>
+    <priority>0.8</priority>
+  </url>
+
+</urlset>
