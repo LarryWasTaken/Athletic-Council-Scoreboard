@@ -1,8 +1,42 @@
+// this is vball code, 
 let p1 = 0;
 let p2 = 0;
 let homeTeam = "Glenforest";
 let away = "Lozersss";
 let setNumber = 1;
+
+// ===== TIMEOUT VARIABLES =====
+let p1Timeouts = 2;
+let p2Timeouts = 2;
+let timeoutActive = false;
+let timeoutSecondsRemaining = 60;
+let timeoutInterval = null;
+let timeoutOverlay = null;
+let timeoutWasRunning = false;
+
+let timeoutCardWidth = 220;
+let timeoutCardHeight = 180;
+let timeout1X, timeout1Y, timeout2X, timeout2Y;
+
+let timeoutButtonX, timeoutButtonY;
+let timeoutButtonWidth = 140;
+let timeoutButtonHeight = 60;
+
+let p1TimeoutGlow = 0;
+let p2TimeoutGlow = 0;
+let p1TimeoutGlowColor = "gold";
+let p2TimeoutGlowColor = "gold";
+let p1TimeoutScaleAnim = 0;
+let p2TimeoutScaleAnim = 0;
+
+let team1_timeout_plus_X, team1_timeout_plus_Y;
+let team1_timeout_minus_X, team1_timeout_minus_Y;
+let team2_timeout_plus_X, team2_timeout_plus_Y;
+let team2_timeout_minus_X, team2_timeout_minus_Y;
+
+let smallButtonWidth = 60;
+let smallButtonHeight = 40;
+// ===== END TIMEOUT VARIABLES =====
 
 // Timer button dimensions
 let timerButtonWidth = 120;
@@ -90,12 +124,15 @@ function setup() {
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
     setPositions();
+    setTimeoutPositions();
 }
 
 function setPositions() {
-    card1X = width * 0.25 - cardWidth / 2;
-    card2X = width * 0.75 - cardWidth / 2;
-    
+    let percent = 0.25;
+    let sideMargin = width * percent - cardWidth;
+    card1X = sideMargin;
+    card2X = width - cardWidth - sideMargin;
+        
     // Calculate total block height: timer + gap + cards
     let verticalGap = constrain(height * 0.08, 40, 120); // gap between timer and cards
     let totalBlockHeight = scoreDisH + verticalGap + cardHeight;
@@ -134,7 +171,7 @@ function setPositions() {
     let startButtonX = buttonCenterX - buttonTotalWidth / 2;
 
     setCardX = width / 2 - setCardWidth / 2;
-    setCardY = card1Y + (cardHeight - setCardHeight) / 2;
+    setCardY = card1Y;
 
     // Set card buttons
     let btnY = setCardHeight - 45;
@@ -165,6 +202,32 @@ function setPositions() {
 
     team2_btn_minus1_X = team2_btn_plus1_X + scoreButtonWidth + space;
     team2_btn_minus1_Y = card2Y + buttonRowY;
+    setTimeoutPositions();
+}
+
+function setTimeoutPositions() {
+    // Position timeout cards below set card (mirroring bball layout)
+    timeout1X = card1X + cardWidth + 50; // to the right of team 1 card (like foul cards in bball)
+    timeout1Y = setCardY+ setCardHeight + space ; // aligned vertically with set card
+    
+    timeout2X = card2X - timeoutCardWidth - 50; // to the left of team 2 card
+    timeout2Y = timeout1Y; // aligned vertically with set card
+    
+    // Timeout button centered between the two cards
+    timeoutButtonX = width / 2 - timeoutButtonWidth / 2;
+    timeoutButtonY = setCardY + setCardHeight + 25 + timeoutCardHeight / 2 - timeoutButtonHeight / 2;
+    
+    // Team 1 timeout buttons
+    team1_timeout_plus_X = timeout1X + timeoutCardWidth/2 - smallButtonWidth - 10;
+    team1_timeout_minus_X = timeout1X + timeoutCardWidth/2 + 10;
+    team1_timeout_plus_Y = timeout1Y + timeoutCardHeight - smallButtonHeight - 20;
+    team1_timeout_minus_Y = team1_timeout_plus_Y;
+    
+    // Team 2 timeout buttons
+    team2_timeout_plus_X = timeout2X + timeoutCardWidth/2 - smallButtonWidth - 10;
+    team2_timeout_minus_X = timeout2X + timeoutCardWidth/2 + 10;
+    team2_timeout_plus_Y = timeout2Y + timeoutCardHeight - smallButtonHeight - 20;
+    team2_timeout_minus_Y = team2_timeout_plus_Y;
 }
 
 function draw() {
@@ -180,6 +243,19 @@ function draw() {
     drawScoreCards();
     drawSetCard();
 
+    drawTimeoutButton();
+    drawTimeoutCard(timeout1X, timeout1Y, homeTeam, p1Timeouts, true);
+    drawTimeoutCard(timeout2X, timeout2Y, away, p2Timeouts, false);
+    
+    // Decrease timeout animation counters
+    if (p1TimeoutGlow > 0) p1TimeoutGlow -= 2;
+    if (p2TimeoutGlow > 0) p2TimeoutGlow -= 2;
+    if (p1TimeoutScaleAnim > 0) p1TimeoutScaleAnim -= 0.05;
+    if (p2TimeoutScaleAnim > 0) p2TimeoutScaleAnim -= 0.05;
+    // ===== END NEW LINES =====
+
+    if (p1Glow > 0) p1Glow -= 2;
+
     if (p1Glow > 0) p1Glow -= 2;
     if (p2Glow > 0) p2Glow -= 2;
     if (p1ScaleAnim > 0) p1ScaleAnim -= 0.05;
@@ -188,6 +264,23 @@ function draw() {
     if (pressTimer > 0) {
         pressTimer--;
         if (pressTimer === 0) pressedButton = null;
+    }
+    if (timeoutActive) {
+        fill(0, 0, 0, 150);
+        noStroke();
+        rect(0, 0, width, height);
+        
+        fill(255);
+        textAlign(CENTER, CENTER);
+        textSize(40);
+        textStyle(BOLD);
+        text("TIMEOUT IN PROGRESS", width / 2, height / 2);
+        textSize(15);
+        text("If you can read this, then its prolly a good idea to switch back to the scoreVu system", width / 2, height / 2 +50);
+        text("This text is not supposed to be visible unless theres some positioning issue", width / 2, height / 2 +75);
+        text("Would recommend you to call the Gamecrew head n ask them to switch to the old scoreboard (ScoreVu)", width / 2, height / 2 +100);
+        text("N please email me asap at muhammadibrahim.lari01@gmail.com or ask someone to get larry", width / 2, height / 2 +125);
+        textStyle(NORMAL);
     }
 }
 
@@ -578,9 +671,327 @@ function drawSmallButton(x, y, label) {
     textStyle(NORMAL);
 }
 
+function drawTimeoutButton() {
+    if (timeoutActive) return;
+    
+    let x = timeoutButtonX;
+    let y = timeoutButtonY;
+    let buttonId = `timeout-main`;
+    let isPressed = (pressedButton === buttonId);
+    let isHovered = mouseX > x && mouseX < x + timeoutButtonWidth && 
+                    mouseY > y && mouseY < y + timeoutButtonHeight;
+    
+    let scale = isPressed ? 0.95 : (isHovered ? 1.1 : 1.0);
+    let scaledWidth = timeoutButtonWidth * scale;
+    let scaledHeight = timeoutButtonHeight * scale;
+    let adjustedX = x - (scaledWidth - timeoutButtonWidth) / 2;
+    let adjustedY = y - (scaledHeight - timeoutButtonHeight) / 2;
+    
+    if (isPressed) {
+        drawingContext.shadowOffsetX = 2;
+        drawingContext.shadowOffsetY = 2;
+        drawingContext.shadowBlur = 5;
+    } else {
+        drawingContext.shadowOffsetX = 4;
+        drawingContext.shadowOffsetY = 4;
+        drawingContext.shadowBlur = 10;
+    }
+    drawingContext.shadowColor = "rgba(0,0,0,0.2)";
+    
+    if (isPressed) fill("#2e7bb5");
+    else if (isHovered) fill("#5dade2");
+    else fill("#2e86c1");
+    
+    stroke(255, 255, 255, 50);
+    strokeWeight(2);
+    rect(adjustedX, adjustedY, scaledWidth, scaledHeight, 10);
+    noStroke();
+    
+    drawingContext.shadowOffsetX = 0;
+    drawingContext.shadowOffsetY = 0;
+    drawingContext.shadowBlur = 0;
+    
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(28);
+    textStyle(BOLD);
+    text("TIMEOUT", adjustedX + scaledWidth / 2, adjustedY + scaledHeight / 2);
+    textStyle(NORMAL);
+}
+
+function drawTimeoutCard(x, y, teamName, timeouts, isTeam1 = true) {
+    let glow = isTeam1 ? p1TimeoutGlow : p2TimeoutGlow;
+    let glowColor = isTeam1 ? p1TimeoutGlowColor : p2TimeoutGlowColor;
+
+    if (glow > 0) {
+        drawingContext.shadowBlur = 30;
+        if (glowColor === "red") drawingContext.shadowColor = `rgba(255,0,0,${glow/100})`;
+        else drawingContext.shadowColor = `rgba(255,215,0,${glow/100})`;
+    } else {
+        drawingContext.shadowBlur = 12;
+        drawingContext.shadowColor = "rgba(0,0,0,0.25)";
+    }
+
+    fill(240, 248, 255, 220);
+    rect(x, y, timeoutCardWidth, timeoutCardHeight, 20);
+
+    noFill();
+    strokeWeight(2);
+    let grad = drawingContext.createLinearGradient(x, y, x + timeoutCardWidth, y + timeoutCardHeight);
+    grad.addColorStop(0, "rgba(147, 51, 234, 0.7)");
+    grad.addColorStop(1, "rgba(249, 115, 22, 0.7)");
+    drawingContext.strokeStyle = grad;
+    rect(x, y, timeoutCardWidth, timeoutCardHeight, 20);
+    noStroke();
+
+    drawingContext.shadowOffsetX = 0;
+    drawingContext.shadowOffsetY = 0;
+    drawingContext.shadowBlur = 0;
+
+    fill(0);
+    textAlign(CENTER, CENTER);
+    textSize(24);
+    textStyle(BOLD);
+    text("TIMEOUTS", x + timeoutCardWidth / 2, y + 30);
+
+    let scaleAnim = isTeam1 ? p1TimeoutScaleAnim : p2TimeoutScaleAnim;
+    let scoreScale = 1.0 + scaleAnim * 0.3;
+    textSize(64 * scoreScale);
+    fill(0);
+    textStyle(NORMAL);
+    text(timeouts, x + timeoutCardWidth / 2, y + 85);
+    
+    let plusX = isTeam1 ? team1_timeout_plus_X : team2_timeout_plus_X;
+    let plusY = isTeam1 ? team1_timeout_plus_Y : team2_timeout_plus_Y;
+    let minusX = isTeam1 ? team1_timeout_minus_X : team2_timeout_minus_X;
+    let minusY = isTeam1 ? team1_timeout_minus_Y : team2_timeout_minus_Y;
+    
+    drawTimeoutSmallButton(plusX, plusY, "+1");
+    drawTimeoutSmallButton(minusX, minusY, "-1");
+}
+
+function drawTimeoutSmallButton(x, y, label) {
+    let isPressed = (pressedButton === `timeout-${x}-${y}`);
+    let isHovered = mouseX > x && mouseX < x + smallButtonWidth && mouseY > y && mouseY < y + smallButtonHeight;
+    let scale = isPressed ? 0.95 : (isHovered ? 1.1 : 1.0);
+    let scaledWidth = smallButtonWidth * scale;
+    let scaledHeight = smallButtonHeight * scale;
+    let adjustedX = x - (scaledWidth - smallButtonWidth)/2;
+    let adjustedY = y - (scaledHeight - smallButtonHeight)/2;
+
+    drawingContext.shadowOffsetX = isPressed ? 2 : 4;
+    drawingContext.shadowOffsetY = isPressed ? 2 : 4;
+    drawingContext.shadowBlur = isPressed ? 5 : 10;
+    drawingContext.shadowColor = "rgba(0,0,0,0.2)";
+
+    if (isPressed) fill("#ff9fb0");
+    else if (isHovered) fill("#ffc4d0");
+    else fill("#ffe4e9");
+
+    stroke(0, 0, 0, 30);
+    strokeWeight(2);
+    rect(adjustedX, adjustedY, scaledWidth, scaledHeight, 8);
+    noStroke();
+
+    drawingContext.shadowOffsetX = 0;
+    drawingContext.shadowOffsetY = 0;
+    drawingContext.shadowBlur = 0;
+
+    fill(0);
+    textAlign(CENTER, CENTER);
+    textSize(24);
+    textStyle(BOLD);
+    text(label, adjustedX + scaledWidth/2, adjustedY + scaledHeight/2);
+    textStyle(NORMAL);
+}
+
+function startTimeout() {
+    if (timeoutActive) return;
+    
+    timeoutWasRunning = timerRunning;
+    if (timerRunning) {
+        timerRunning = false;
+    }
+    
+    timeoutActive = true;
+    timeoutSecondsRemaining = 60;
+    
+    createTimeoutOverlay();
+    updateTimeoutDisplay();
+    
+    timeoutInterval = setInterval(() => {
+        timeoutSecondsRemaining--;
+        updateTimeoutDisplay();
+        
+        if (timeoutSecondsRemaining <= 0) {
+            endTimeout();
+        }
+    }, 1000);
+}
+
+function createTimeoutOverlay() {
+    timeoutOverlay = document.createElement('div');
+    timeoutOverlay.id = 'timeoutOverlay';
+    timeoutOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.85);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease;
+    `;
+    
+    let timeoutBox = document.createElement('div');
+    timeoutBox.id = 'timeoutBox';
+    timeoutBox.style.cssText = `
+        background: rgb(240, 248, 255);
+        border-radius: 25px;
+        padding: 60px 80px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        min-width: 500px;
+        text-align: center;
+        border: 4px solid #9333ea;
+        animation: slideDown 0.4s ease;
+    `;
+    
+    let header = document.createElement('h2');
+    header.textContent = 'TIMEOUT';
+    header.style.cssText = `
+        margin: 0 0 40px 0;
+        font-size: 48px;
+        font-weight: bold;
+        color: #000;
+        font-family: 'Teko', sans-serif;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    `;
+    
+    let timerDisplay = document.createElement('div');
+    timerDisplay.id = 'timeoutTimerDisplay';
+    timerDisplay.style.cssText = `
+        font-size: 120px;
+        font-weight: bold;
+        color: #000;
+        margin: 40px 0;
+        font-family: 'Courier New', monospace;
+        letter-spacing: 8px;
+    `;
+    
+    let cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.onclick = cancelTimeout;
+    cancelBtn.style.cssText = `
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        border: none;
+        padding: 15px 40px;
+        font-size: 24px;
+        font-weight: bold;
+        border-radius: 10px;
+        cursor: pointer;
+        margin-top: 30px;
+        transition: all 0.3s;
+        font-family: 'Teko', sans-serif;
+    `;
+    cancelBtn.onmouseover = () => {
+        cancelBtn.style.transform = 'translateY(-2px)';
+        cancelBtn.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
+    };
+    cancelBtn.onmouseout = () => {
+        cancelBtn.style.transform = 'translateY(0)';
+        cancelBtn.style.boxShadow = 'none';
+    };
+    
+    timeoutBox.appendChild(header);
+    timeoutBox.appendChild(timerDisplay);
+    timeoutBox.appendChild(cancelBtn);
+    timeoutOverlay.appendChild(timeoutBox);
+    document.body.appendChild(timeoutOverlay);
+    
+    let style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+function updateTimeoutDisplay() {
+    let display = document.getElementById('timeoutTimerDisplay');
+    let box = document.getElementById('timeoutBox');
+    if (!display || !box) return;
+    
+    let minutes = Math.floor(timeoutSecondsRemaining / 60);
+    let seconds = timeoutSecondsRemaining % 60;
+    display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    
+    if (timeoutSecondsRemaining <= 15) {
+        let ratio = timeoutSecondsRemaining / 15;
+        let r = Math.floor(255 * (1 - ratio) + 0 * ratio);
+        let g = Math.floor(0 * (1 - ratio) + 0 * ratio);
+        let b = Math.floor(0 * (1 - ratio) + 0 * ratio);
+        display.style.color = `rgb(${r}, ${g}, ${b})`;
+        
+        if (timeoutSecondsRemaining <= 10) {
+            display.style.animation = 'pulse 0.5s ease-in-out infinite';
+            box.style.borderColor = '#ef4444';
+            box.style.borderWidth = '6px';
+        }
+    }
+}
+
+function endTimeout() {
+    clearInterval(timeoutInterval);
+    timeoutInterval = null;
+    
+    if (hornSound && hornSound.isLoaded()) {
+        hornSound.play();
+    }
+    
+    setTimeout(() => {
+        closeTimeout();
+    }, 3000);
+}
+
+function cancelTimeout() {
+    clearInterval(timeoutInterval);
+    timeoutInterval = null;
+    closeTimeout();
+}
+
+function closeTimeout() {
+    if (timeoutOverlay && timeoutOverlay.parentNode) {
+        timeoutOverlay.parentNode.removeChild(timeoutOverlay);
+    }
+    timeoutOverlay = null;
+    timeoutActive = false;
+    timeoutSecondsRemaining = 60;
+}
+
 
 
 function mousePressed() {
+    if (timeoutActive) return;
     // Team 1 score buttons
     if (isPointInRect(mouseX, mouseY, team1_btn_plus1_X, team1_btn_plus1_Y, scoreButtonWidth, scoreButtonHeight)) {
         pressedButton = `${team1_btn_plus1_X}-${team1_btn_plus1_Y}`;
@@ -646,6 +1057,12 @@ function mousePressed() {
         totalMillis = 0;
         p1Glow = 0;
         p2Glow = 0;
+        p1Timeouts = 2;
+        p2Timeouts = 2;
+        p1TimeoutGlow = 0;
+        p2TimeoutGlow = 0;
+        p1TimeoutScaleAnim = 0;
+        p2TimeoutScaleAnim = 0;
     }
     
     if (isPointInRect(mouseX, mouseY, hornX, hornY, timerButtonWidth, timerButtonHeight)) {
@@ -685,6 +1102,59 @@ function mousePressed() {
             setGlow = 100;
             setGlowColor = "red";
             setScaleAnim = 1.0;
+        }
+    }
+    if (isPointInRect(mouseX, mouseY, timeoutButtonX, timeoutButtonY, timeoutButtonWidth, timeoutButtonHeight)) {
+        if (!timeoutActive) {
+            pressedButton = `timeout-main`;
+            pressTimer = 10;
+            startTimeout();
+        }
+    }
+
+    // Team 1 timeout buttons
+    if (isPointInRect(mouseX, mouseY, team1_timeout_plus_X, team1_timeout_plus_Y, smallButtonWidth, smallButtonHeight)) {
+        if(p1Timeouts<2){
+            pressedButton = `timeout-${team1_timeout_plus_X}-${team1_timeout_plus_Y}`;
+            pressTimer = 10;
+            p1Timeouts++;
+            p1TimeoutGlow = 100;
+            p1TimeoutGlowColor = "gold";
+            p1TimeoutScaleAnim = 1.0;
+        }
+    }
+    
+    if (isPointInRect(mouseX, mouseY, team1_timeout_minus_X, team1_timeout_minus_Y, smallButtonWidth, smallButtonHeight)) {
+        if (p1Timeouts > 0) {
+            pressedButton = `timeout-${team1_timeout_minus_X}-${team1_timeout_minus_Y}`;
+            pressTimer = 10;
+            p1Timeouts--;
+            p1TimeoutGlow = 100;
+            p1TimeoutGlowColor = "red";
+            p1TimeoutScaleAnim = 1.0;
+        }
+    }
+    
+    // Team 2 timeout buttons
+    if (isPointInRect(mouseX, mouseY, team2_timeout_plus_X, team2_timeout_plus_Y, smallButtonWidth, smallButtonHeight)) {
+        if(p2Timeouts<2){
+            pressedButton = `timeout-${team2_timeout_plus_X}-${team2_timeout_plus_Y}`;
+            pressTimer = 10;
+            p2Timeouts++;
+            p2TimeoutGlow = 100;
+            p2TimeoutGlowColor = "gold";
+            p2TimeoutScaleAnim = 1.0;
+        }
+    }
+    
+    if (isPointInRect(mouseX, mouseY, team2_timeout_minus_X, team2_timeout_minus_Y, smallButtonWidth, smallButtonHeight)) {
+        if (p2Timeouts > 0) {
+            pressedButton = `timeout-${team2_timeout_minus_X}-${team2_timeout_minus_Y}`;
+            pressTimer = 10;
+            p2Timeouts--;
+            p2TimeoutGlow = 100;
+            p2TimeoutGlowColor = "red";
+            p2TimeoutScaleAnim = 1.0;
         }
     }
     
@@ -759,5 +1229,11 @@ function keyPressed() {
         totalMillis = 0;
         p1Glow = 0;
         p2Glow = 0;
+        p1Timeouts = 2;
+        p2Timeouts = 2;
+        p1TimeoutGlow = 0;
+        p2TimeoutGlow = 0;
+        p1TimeoutScaleAnim = 0;
+        p2TimeoutScaleAnim = 0;
     }
 }
