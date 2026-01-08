@@ -1282,7 +1282,7 @@ if (isPointInRect(mouseX, mouseY, team2_foul_minus_X, team2_foul_minus_Y, smallB
     }
 
      if (isPointInRect(mouseX, mouseY, team1_timeout_plus_X, team1_timeout_plus_Y, smallButtonWidth, smallButtonHeight)) {
-        if (p1Timeouts < 2) {
+        if (p1Timeouts < 10) {
             pressedButton = `timeout1-plus`;
             pressTimer = 10;
             p1Timeouts++;
@@ -1305,7 +1305,7 @@ if (isPointInRect(mouseX, mouseY, team2_foul_minus_X, team2_foul_minus_Y, smallB
     
     // Team 2 timeout buttons
     if (isPointInRect(mouseX, mouseY, team2_timeout_plus_X, team2_timeout_plus_Y, smallButtonWidth, smallButtonHeight)) {
-        if (p2Timeouts < 2) {
+        if (p2Timeouts < 10) {
             pressedButton = `timeout2-plus`;
             pressTimer = 10;
             p2Timeouts++;
