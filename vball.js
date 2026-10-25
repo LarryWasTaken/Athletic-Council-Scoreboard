@@ -100,9 +100,7 @@ let p2ScaleAnim = 0;
 let pressedButton = null;
 let pressTimer = 0;
 
-function preload() {
-    hornSound = loadSound("gameBuzzer.mp3");
-}
+function preload() {}
 
 function setup() {
     document.body.style.margin = '0';
@@ -110,6 +108,8 @@ function setup() {
     document.body.style.overflow = 'hidden';
 
     let canvas = createCanvas(windowWidth, windowHeight);
+    // Horn loads here (not in preload) so a missing/slow file can't block the whole scorer
+    hornSound = loadSound('gameBuzzer.mp3', function(){}, function(){ console.warn('gameBuzzer.mp3 failed to load'); });
     canvas.style('display', 'block');
 
     textFont('Teko, sans-serif');
@@ -231,6 +231,7 @@ function setTimeoutPositions() {
 }
 
 function draw() {
+    publishAudience();
     // Background gradient
     let gradBg = drawingContext.createLinearGradient(0, 0, width, height);
     gradBg.addColorStop(0, '#4facfe');
@@ -1236,4 +1237,17 @@ function keyPressed() {
         p1TimeoutScaleAnim = 0;
         p2TimeoutScaleAnim = 0;
     }
+}
+
+
+// Sends the current match state to the audience display window (read-only mirror).
+function publishAudience() {
+    if (!window.AudienceSync) return;
+    AudienceSync.publish('volleyball', {
+        home: { name: homeTeam, score: p1, timeouts: p1Timeouts },
+        away: { name: away, score: p2, timeouts: p2Timeouts },
+        period: setNumber,
+        timer: { running: timerRunning, ms: totalMillis },
+        timeout: { active: timeoutActive, seconds: timeoutSecondsRemaining }
+    });
 }
