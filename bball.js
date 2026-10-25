@@ -51,10 +51,10 @@ let timerButtonWidth = 120;
 let timerButtonHeight = 60;
 
 // Score button dimensions
-let scoreButtonWidth = 90;
+let scoreButtonWidth = 70;   // narrowed so four buttons (+3 +2 +1 -1) fit on the card
 let scoreButtonHeight = 50;
 
-let space = 20;
+let space = 12;
 let buttonSpacing = 20;
 let buttonOff = 15;
 
@@ -72,11 +72,13 @@ let set_btn_plus_X, set_btn_plus_Y;
 let set_btn_minus_X, set_btn_minus_Y;
 
 // Score buttons for team 1
+let team1_btn_plus3_X, team1_btn_plus3_Y;
 let team1_btn_plus1_X, team1_btn_plus1_Y;
 let team1_btn_plus2_X, team1_btn_plus2_Y;
 let team1_btn_minus1_X, team1_btn_minus1_Y;
 
 // Score buttons for team 2
+let team2_btn_plus3_X, team2_btn_plus3_Y;
 let team2_btn_plus1_X, team2_btn_plus1_Y;
 let team2_btn_plus2_X, team2_btn_plus2_Y;
 let team2_btn_minus1_X, team2_btn_minus1_Y;
@@ -125,9 +127,7 @@ let setScaleAnim = 0;
 let pressedButton = null;
 let pressTimer = 0;
 
-function preload() {
-    hornSound = loadSound("gameBuzzer.mp3");
-}
+function preload() {}
 
 function setup() {
     document.body.style.margin = '0';
@@ -135,6 +135,8 @@ function setup() {
     document.body.style.overflow = 'hidden';
 
     let canvas = createCanvas(windowWidth, windowHeight);
+    // Horn loads here (not in preload) so a missing/slow file can't block the whole scorer
+    hornSound = loadSound('gameBuzzer.mp3', function(){}, function(){ console.warn('gameBuzzer.mp3 failed to load'); });
     canvas.style('display', 'block');
 
     textFont('Teko, sans-serif');
@@ -193,11 +195,14 @@ function setPositions() {
     // Button positioning within cards
     let buttonRowY = cardHeight - 75;
     let buttonCenterX = cardWidth / 2;
-    let buttonTotalWidth = scoreButtonWidth * 3 + space * 2;
+    let buttonTotalWidth = scoreButtonWidth * 4 + space * 3;
     let startButtonX = buttonCenterX - buttonTotalWidth / 2;
 
     // Team 1 buttons (left card)
-    team1_btn_plus2_X = card1X + startButtonX;
+    team1_btn_plus3_X = card1X + startButtonX;
+    team1_btn_plus3_Y = card1Y + buttonRowY;
+
+    team1_btn_plus2_X = team1_btn_plus3_X + scoreButtonWidth + space;
     team1_btn_plus2_Y = card1Y + buttonRowY;
 
     team1_btn_plus1_X = team1_btn_plus2_X + scoreButtonWidth + space;
@@ -207,7 +212,10 @@ function setPositions() {
     team1_btn_minus1_Y = card1Y + buttonRowY;
 
     // Team 2 buttons (right card)
-    team2_btn_plus2_X = card2X + startButtonX;
+    team2_btn_plus3_X = card2X + startButtonX;
+    team2_btn_plus3_Y = card2Y + buttonRowY;
+
+    team2_btn_plus2_X = team2_btn_plus3_X + scoreButtonWidth + space;
     team2_btn_plus2_Y = card2Y + buttonRowY;
 
     team2_btn_plus1_X = team2_btn_plus2_X + scoreButtonWidth + space;
@@ -266,6 +274,7 @@ function setTimeoutPositions() {
 }
 
 function draw() {
+    publishAudience();
     // Background gradient
     let gradBg = drawingContext.createLinearGradient(0, 0, width, height);
     gradBg.addColorStop(0, '#4facfe');
@@ -422,16 +431,18 @@ function drawScoreCards() {
     drawCard(card1X, card1Y, homeTeam, p1, p1Glow, p1GlowColor, p1ScaleAnim,
              team1_btn_plus2_X, team1_btn_plus2_Y,
              team1_btn_plus1_X, team1_btn_plus1_Y,
-             team1_btn_minus1_X, team1_btn_minus1_Y);
+             team1_btn_minus1_X, team1_btn_minus1_Y,
+             team1_btn_plus3_X, team1_btn_plus3_Y);
     
     // Draw right card (team 2)
     drawCard(card2X, card2Y, away, p2, p2Glow, p2GlowColor, p2ScaleAnim,
              team2_btn_plus2_X, team2_btn_plus2_Y,
              team2_btn_plus1_X, team2_btn_plus1_Y,
-             team2_btn_minus1_X, team2_btn_minus1_Y);
+             team2_btn_minus1_X, team2_btn_minus1_Y,
+             team2_btn_plus3_X, team2_btn_plus3_Y);
 }
 
-function drawCard(x, y, teamName, score, glowAmount, glowColor, scaleAnim, btn1X, btn1Y, btn2X, btn2Y, btn3X, btn3Y) {
+function drawCard(x, y, teamName, score, glowAmount, glowColor, scaleAnim, btn1X, btn1Y, btn2X, btn2Y, btn3X, btn3Y, btn4X, btn4Y) {
     // Card shadow
     drawingContext.shadowOffsetX = 6;
     drawingContext.shadowOffsetY = 6;
@@ -490,6 +501,7 @@ function drawCard(x, y, teamName, score, glowAmount, glowColor, scaleAnim, btn1X
     drawScoreButton(btn1X, btn1Y, "+2");
     drawScoreButton(btn2X, btn2Y, "+1");
     drawScoreButton(btn3X, btn3Y, "-1");
+    drawScoreButton(btn4X, btn4Y, "+3");
 }
 
 function drawScoreButton(x, y, label) {
@@ -1103,6 +1115,14 @@ function mousePressed() {
     // ----------- SCORE BUTTONS ------------
 
     // Team 1 score buttons
+    if (isPointInRect(mouseX, mouseY, team1_btn_plus3_X, team1_btn_plus3_Y, scoreButtonWidth, scoreButtonHeight)) {
+        pressedButton = `${team1_btn_plus3_X}-${team1_btn_plus3_Y}`;
+        pressTimer = 10;
+        p1 += 3;
+        p1Glow = 100;
+        p1GlowColor = "gold";
+        p1ScaleAnim = 1.0;
+    }
     if (isPointInRect(mouseX, mouseY, team1_btn_plus1_X, team1_btn_plus1_Y, scoreButtonWidth, scoreButtonHeight)) {
         pressedButton = `${team1_btn_plus1_X}-${team1_btn_plus1_Y}`;
         pressTimer = 10;
@@ -1131,6 +1151,14 @@ function mousePressed() {
     }
 
     // Team 2 score buttons
+    if (isPointInRect(mouseX, mouseY, team2_btn_plus3_X, team2_btn_plus3_Y, scoreButtonWidth, scoreButtonHeight)) {
+        pressedButton = `${team2_btn_plus3_X}-${team2_btn_plus3_Y}`;
+        pressTimer = 10;
+        p2 += 3;
+        p2Glow = 100;
+        p2GlowColor = "gold";
+        p2ScaleAnim = 1.0;
+    }
     if (isPointInRect(mouseX, mouseY, team2_btn_plus1_X, team2_btn_plus1_Y, scoreButtonWidth, scoreButtonHeight)) {
         pressedButton = `${team2_btn_plus1_X}-${team2_btn_plus1_Y}`;
         pressTimer = 10;
@@ -1415,4 +1443,17 @@ function keyPressed() {
         p1TimeoutScaleAnim = 0;
         p2TimeoutScaleAnim = 0;
     }
+}
+
+
+// Sends the current match state to the audience display window (read-only mirror).
+function publishAudience() {
+    if (!window.AudienceSync) return;
+    AudienceSync.publish('basketball', {
+        home: { name: homeTeam, score: p1, fouls: p1Fouls, timeouts: p1Timeouts },
+        away: { name: away, score: p2, fouls: p2Fouls, timeouts: p2Timeouts },
+        period: p1Sets,
+        timer: { running: timerRunning, ms: totalMillis },
+        timeout: { active: timeoutActive, seconds: timeoutSecondsRemaining }
+    });
 }
