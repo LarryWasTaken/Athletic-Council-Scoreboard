@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Glenforest Audience Display</title>
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+    --navy: #020617;
+    --blue: #04123d;
+    --gold: #ffd700;
+    --cyan: #36d1dc;
+    --sky: #5b86e5;
+    --ink: #ffffff;
+    --muted: #b9c6e8;
+    --pad: 2.2vmin;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    font-family: 'Teko', 'Arial Narrow', Impact, sans-serif;
+    color: var(--ink);
+    background:
+        radial-gradient(ellipse at 50% -10%, rgba(255,215,0,0.16), transparent 55%),
+        linear-gradient(135deg, var(--navy), var(--blue) 55%, var(--navy));
+    user-select: none;
+    cursor: default;
+}
+body.idle { cursor: none; }
+
+/* ---------- match view ---------- */
+#match {
+    height: 100%; display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: var(--pad); padding: var(--pad);
+}
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 2vw; }
+.brand { display: flex; align-items: center; gap: 1.5vmin; min-width: 0; }
+.brand img { height: 9vmin; width: auto; filter: drop-shadow(0 0 1.5vmin rgba(3,164,251,0.8)); }
+.brand span { font-size: 5vmin; font-weight: 600; letter-spacing: 0.04em; color: var(--gold); white-space: nowrap; }
+#sportName { font-size: 7vmin; font-weight: 700; letter-spacing: 0.08em; color: var(--ink); }
+
+.board {
+    display: grid; gap: var(--pad); min-height: 0;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.7fr) minmax(0, 1fr);
+}
+
+.panel {
+    container-type: inline-size;
+    display: flex; flex-direction: column; min-height: 0;
+    border-radius: 2.4vmin; padding: 2vmin 2.2vmin;
+    background: linear-gradient(160deg, rgba(79,172,254,0.20), rgba(4,18,61,0.55));
+    border: 0.45vmin solid rgba(54,209,220,0.6);
+    box-shadow: 0 1.5vmin 4vmin rgba(0,0,0,0.45);
+}
+.name {
+    font-size: clamp(3vmin, 14cqw, 11vmin); font-weight: 700; line-height: 0.95; text-align: center;
+    min-height: 2em; display: flex; align-items: center; justify-content: center;
+    overflow-wrap: anywhere; text-wrap: balance; color: var(--gold);
+}
+.score {
+    flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center;
+    font-size: min(62cqw, 46vmin); font-weight: 700; line-height: 0.8; font-variant-numeric: tabular-nums;
+}
+.score.bump { animation: bump 0.7s ease-out; }
+@keyframes bump {
+    0%   { transform: scale(1);    color: var(--gold); text-shadow: 0 0 5vmin rgba(255,215,0,0.9); }
+    35%  { transform: scale(1.12); color: var(--gold); text-shadow: 0 0 5vmin rgba(255,215,0,0.9); }
+    100% { transform: scale(1);    color: var(--ink);  text-shadow: none; }
+}
+.stats { display: flex; justify-content: center; gap: 2.5vmin; }
+.stat {
+    flex: 1; max-width: 50%; text-align: center; padding: 0.8vmin 1vmin 0.4vmin;
+    border-radius: 1.6vmin; background: rgba(0,0,0,0.35); border: 0.25vmin solid rgba(255,255,255,0.18);
+}
+.stat .label { font-size: 4vmin; font-weight: 500; letter-spacing: 0.08em; color: var(--muted); line-height: 1; }
+.stat .value { font-size: 9vmin; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+
+.centre { container-type: inline-size; display: flex; flex-direction: column; gap: var(--pad); min-height: 0; justify-content: center; }
+.clockBox {
+    text-align: center; border-radius: 2.4vmin; padding: 2vmin 1vmin 1vmin;
+    background: rgba(0,0,0,0.45); border: 0.45vmin solid rgba(255,215,0,0.55);
+}
+.clockBox.running { animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse {
+    0%, 100% { border-color: rgba(255,215,0,0.45); }
+    50%      { border-color: rgba(255,255,255,0.95); }
+}
+#clock { font-size: min(36cqw, 20vmin); font-weight: 700; line-height: 0.9; color: var(--gold); font-variant-numeric: tabular-nums; }
+.periodBox {
+    text-align: center; border-radius: 2.4vmin; padding: 1vmin 1vmin 0.5vmin;
+    background: linear-gradient(160deg, rgba(79,172,254,0.20), rgba(4,18,61,0.55));
+    border: 0.45vmin solid rgba(54,209,220,0.6);
+}
+#periodLabel { font-size: 5vmin; font-weight: 500; letter-spacing: 0.1em; color: var(--muted); line-height: 1; }
+#periodValue { font-size: min(34cqw, 18vmin); font-weight: 700; line-height: 0.95; }
+[hidden] { display: none !important; }
+
+/* ---------- timeout banner ---------- */
+#timeoutBanner {
+    position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 2vmin;
+    background: rgba(2,6,23,0.9);
+}
+#timeoutBanner .t { font-size: 24vmin; font-weight: 700; letter-spacing: 0.08em; color: var(--gold); line-height: 0.9; }
+#timeoutBanner .c {
+    font-size: 40vmin; font-weight: 700; line-height: 0.85; font-variant-numeric: tabular-nums;
+    padding: 1vmin 4vmin; border-radius: 4vmin; border: 0.8vmin solid #9333ea;
+    background: rgba(255,255,255,0.06);
+}
+#timeoutBanner.low .c { color: #ff5a5a; border-color: #ef4444; }
+
+/* ---------- waiting view ---------- */
+#waiting {
+    position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 2vmin; text-align: center; padding: 4vmin;
+}
+#waiting img { height: 48vmin; width: auto; filter: drop-shadow(0 0 4vmin rgb(3,164,251)); }
+#waiting h1 { font-size: 9vmin; font-weight: 700; letter-spacing: 0.05em; color: var(--gold); line-height: 1; }
+#waiting p { font-size: 5vmin; font-weight: 400; color: var(--muted); line-height: 1.1; }
+
+/* Very tall/narrow windows: stack the board */
+@media (max-aspect-ratio: 1/1) {
+    .board { grid-template-columns: 1fr; grid-template-rows: repeat(3, minmax(0, auto)); overflow: hidden; }
+    .score { font-size: min(40cqw, 24vmin); }
+    .brand span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .score.bump, .clockBox.running { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="match" hidden>
+    <header class="bar">
+        <div class="brand">
+            <img src="griffy.png" alt="">
+            <span>Glenforest Mighty Gryphons</span>
+        </div>
+        <div id="sportName"></div>
+    </header>
+
+    <main class="board">
+        <section class="panel" id="homePanel">
+            <div class="name" id="homeName"></div>
+            <div class="score" id="homeScore">0</div>
+            <div class="stats" id="homeStats"></div>
+        </section>
+
+        <section class="centre">
+            <div class="clockBox" id="clockBox"><div id="clock">00:00</div></div>
+            <div class="periodBox" id="periodBox" hidden>
+                <div id="periodLabel"></div>
+                <div id="periodValue"></div>
+            </div>
+        </section>
+
+        <section class="panel" id="awayPanel">
+            <div class="name" id="awayName"></div>
+            <div class="score" id="awayScore">0</div>
+            <div class="stats" id="awayStats"></div>
+        </section>
+    </main>
+</div>
+
+<div id="timeoutBanner" hidden>
+    <div class="t">TIMEOUT</div>
+    <div class="c" id="timeoutClock">1:00</div>
+</div>
+
+<div id="waiting">
+    <img src="griffy.png" alt="Glenforest Gryphons">
+    <h1>GO GRYPHONS!</h1>
+    <p>Waiting for the scorekeeper to start a match</p>
+</div>
+
+<script src="audience-sync.js"></script>
+<script>
+(function () {
+    var STALE_MS = 12 * 60 * 60 * 1000;   // ignore data older than 12h
+
+    // Only what each sport's existing scorer actually tracks.
+    var SPORT = {
+        volleyball: { title: 'VOLLEYBALL', periodLabel: 'SET',    teamStats: ['timeouts'] },
+        basketball: { title: 'BASKETBALL', periodLabel: 'PERIOD', teamStats: ['fouls', 'timeouts'] },
+        badminton:  { title: 'BADMINTON',  periodLabel: null,     teamStats: [] }
+    };
+    var STAT_LABEL = { fouls: 'FOULS', timeouts: 'TIMEOUTS' };
+
+    var $ = function (id) { return document.getElementById(id); };
+    var current = null;
+    var prevScores = null;      // for the score-change pop; null until first render
+
+    function fmtClock(ms) {
+        var total = Math.floor(Math.max(0, ms) / 1000);
+        var m = Math.floor(total / 60), s = total % 60;
+        return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    }
+
+    function remainingMs() {
+        if (!current) return 0;
+        var t = current.timer;
+        return t.running ? Math.max(0, t.ms - (Date.now() - current.savedAt)) : t.ms;
+    }
+
+    function renderStats(el, team, keys) {
+        // Rebuild only when the set of stats changes; otherwise just update the numbers.
+        var shown = keys.filter(function (k) { return team[k] != null; });
+        var sig = shown.join(',');
+        if (el.dataset.sig !== sig) {
+            el.textContent = '';
+            shown.forEach(function (k) {
+                var box = document.createElement('div'); box.className = 'stat';
+                var l = document.createElement('div'); l.className = 'label'; l.textContent = STAT_LABEL[k];
+                var v = document.createElement('div'); v.className = 'value'; v.dataset.key = k;
+                box.appendChild(l); box.appendChild(v); el.appendChild(box);
+            });
+            el.dataset.sig = sig;
+        }
+        shown.forEach(function (k) {
+            el.querySelector('[data-key="' + k + '"]').textContent = team[k];
+        });
+    }
+
+    function bump(el) {
+        el.classList.remove('bump');
+        void el.offsetWidth;             // restart animation
+        el.classList.add('bump');
+    }
+
+    function render(state) {
+        var usable = state && SPORT[state.sport] && (Date.now() - state.savedAt) < STALE_MS;
+        if (!usable) {
+            current = null; prevScores = null;
+            $('match').hidden = true;
+            $('timeoutBanner').hidden = true;
+            $('waiting').hidden = false;
+            document.title = 'Glenforest Audience Display';
+            return;
+        }
+        current = state;
+        var cfg = SPORT[state.sport];
+
+        $('waiting').hidden = true;
+        $('match').hidden = false;
+        $('sportName').textContent = cfg.title;
+        document.title = cfg.title + ' | Glenforest Audience Display';
+
+        $('homeName').textContent = state.home.name;
+        $('awayName').textContent = state.away.name;
+        $('homeScore').textContent = state.home.score;
+        $('awayScore').textContent = state.away.score;
+
+        if (prevScores && prevScores.sport === state.sport) {
+            if (state.home.score !== prevScores.home) bump($('homeScore'));
+            if (state.away.score !== prevScores.away) bump($('awayScore'));
+        }
+        prevScores = { sport: state.sport, home: state.home.score, away: state.away.score };
+
+        renderStats($('homeStats'), state.home, cfg.teamStats);
+        renderStats($('awayStats'), state.away, cfg.teamStats);
+
+        var showPeriod = cfg.periodLabel && state.period != null;
+        $('periodBox').hidden = !showPeriod;
+        if (showPeriod) {
+            $('periodLabel').textContent = cfg.periodLabel;
+            $('periodValue').textContent = state.period;
+        }
+
+        $('clockBox').classList.toggle('running', state.timer.running);
+        $('clock').textContent = fmtClock(remainingMs());
+
+        var to = state.timeout;
+        var banner = $('timeoutBanner');
+        banner.hidden = !(to && to.active);
+        if (to && to.active) {
+            var m = Math.floor(to.seconds / 60), s = to.seconds % 60;
+            $('timeoutClock').textContent = m + ':' + (s < 10 ? '0' : '') + s;
+            banner.classList.toggle('low', to.seconds <= 10);
+        }
+    }
+
+    // Smooth clock while running (computed from stored ms + savedAt, not a counter).
+    var lastShown = '';
+    function tick() {
+        if (current) {
+            var txt = fmtClock(remainingMs());
+            if (txt !== lastShown) { $('clock').textContent = txt; lastShown = txt; }
+        }
+        requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    AudienceSync.subscribe(render);
+
+    // ---- window helpers: F key / double-click for fullscreen, hide cursor when idle ----
+    var hideTimer = null;
+    function showCursor() {
+        document.body.classList.remove('idle');
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(function () { document.body.classList.add('idle'); }, 3000);
+    }
+    function toggleFullscreen() {
+        if (document.fullscreenElement) { document.exitFullscreen(); }
+        else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen().catch(function () {}); }
+    }
+    document.addEventListener('mousemove', showCursor);
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+        if (e.key === 'Escape' && document.fullscreenElement) document.exitFullscreen();
+    });
+    document.addEventListener('dblclick', toggleFullscreen);
+})();
+</script>
+</body>
+</html>
