@@ -7,13 +7,14 @@
  * Stored JSON shape:
  * {
  *   version : 1,
- *   sport   : "volleyball" | "basketball" | "badminton",
+ *   sport   : "volleyball" | "basketball" | "badminton" | "cricket",
  *   savedAt : <Date.now() when written>,
  *   home    : { name, score, timeouts?, fouls? },
  *   away    : { name, score, timeouts?, fouls? },
  *   period  : <number> | null,            // volleyball: set number, basketball: the middle counter
  *   timer   : { running: bool, ms: <ms remaining at savedAt> },
- *   timeout : { active: bool, seconds: <seconds left> } | null
+ *   timeout : { active: bool, seconds: <seconds left> } | null,
+ *   cricket : { ... }                     // cricket only: extra match detail (see cricket.html)
  * }
  *
  * The clock is stored as (running, ms, savedAt). While running, the audience computes
@@ -26,7 +27,7 @@
     var KEY = 'gfss.audience.state.v1';
     var AUDIENCE_URL = 'audience.html';
     var WINDOW_NAME = 'gfss-audience-display';
-    var SPORTS = ['volleyball', 'basketball', 'badminton'];
+    var SPORTS = ['volleyball', 'basketball', 'badminton', 'cricket'];
     var RESYNC_MS = 10000;   // re-publish the running clock this often
     var DRIFT_MS = 400;      // re-publish if the scorer clock jumps (manual time edit etc.)
 
@@ -54,6 +55,21 @@
         return out;
     }
 
+    // Cricket carries a richer, nested payload. Keep it plain JSON, bounded in size and depth.
+    function cleanDeep(v, depth) {
+        if (depth > 5) return null;
+        if (typeof v === 'string') return v.slice(0, 80);
+        if (typeof v === 'number') return isFinite(v) ? v : 0;
+        if (typeof v === 'boolean' || v === null) return v;
+        if (Array.isArray(v)) return v.slice(0, 40).map(function (x) { return cleanDeep(x, depth + 1); });
+        if (v && typeof v === 'object') {
+            var o = {};
+            Object.keys(v).slice(0, 40).forEach(function (k) { o[k] = cleanDeep(v[k], depth + 1); });
+            return o;
+        }
+        return null;
+    }
+
     // Parse + validate. Returns a clean state object or null (missing / malformed / unknown sport).
     function parse(raw) {
         if (!raw) return null;
@@ -64,7 +80,7 @@
         var home = cleanTeam(s.home), away = cleanTeam(s.away);
         if (!home || !away) return null;
         var t = s.timer || {};
-        return {
+        var out = {
             version: 1,
             sport: s.sport,
             savedAt: num(s.savedAt, 0),
@@ -76,6 +92,11 @@
                 ? { active: !!s.timeout.active, seconds: Math.max(0, Math.floor(num(s.timeout.seconds, 0))) }
                 : null
         };
+        if (s.sport === 'cricket') {
+            if (!s.cricket || typeof s.cricket !== 'object') return null;
+            out.cricket = cleanDeep(s.cricket, 0);
+        }
+        return out;
     }
 
     function read() { return parse(getRaw()); }
@@ -90,7 +111,7 @@
 
         // Signature ignores the live countdown value while running (it changes every frame).
         var sig = JSON.stringify([sport, state.home, state.away, state.period, state.timeout,
-                                  running, running ? null : ms]);
+                                  running, running ? null : ms, state.cricket || null]);
         var need = sig !== lastSig;
 
         if (!need && running && lastPub) {
@@ -109,6 +130,7 @@
             timer: { running: running, ms: ms },
             timeout: state.timeout || null
         };
+        if (sport === 'cricket') payload.cricket = state.cricket || null;
         try {
             window.localStorage.setItem(KEY, JSON.stringify(payload));
             lastSig = sig;

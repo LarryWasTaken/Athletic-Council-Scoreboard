@@ -44,7 +44,7 @@ body.idle { cursor: none; }
 
 .board {
     display: grid; gap: var(--pad); min-height: 0;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 0.7fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 1fr);
 }
 
 .panel {
@@ -81,6 +81,7 @@ body.idle { cursor: none; }
 .centre { container-type: inline-size; display: flex; flex-direction: column; gap: var(--pad); min-height: 0; justify-content: center; }
 .clockBox {
     text-align: center; border-radius: 2.4vmin; padding: 2vmin 1vmin 1vmin;
+    overflow: hidden;
     background: rgba(0,0,0,0.45); border: 0.45vmin solid rgba(255,215,0,0.55);
 }
 .clockBox.running { animation: pulse 1.6s ease-in-out infinite; }
@@ -88,7 +89,7 @@ body.idle { cursor: none; }
     0%, 100% { border-color: rgba(255,215,0,0.45); }
     50%      { border-color: rgba(255,255,255,0.95); }
 }
-#clock { font-size: min(36cqw, 20vmin); font-weight: 700; line-height: 0.9; color: var(--gold); font-variant-numeric: tabular-nums; }
+#clock { display: inline-block; white-space: nowrap; font-size: min(52cqw, 30vmin); font-weight: 700; line-height: 0.9; color: var(--gold); font-variant-numeric: tabular-nums; }
 .periodBox {
     text-align: center; border-radius: 2.4vmin; padding: 1vmin 1vmin 0.5vmin;
     background: linear-gradient(160deg, rgba(79,172,254,0.20), rgba(4,18,61,0.55));
@@ -121,11 +122,100 @@ body.idle { cursor: none; }
 #waiting h1 { font-size: 9vmin; font-weight: 700; letter-spacing: 0.05em; color: var(--gold); line-height: 1; }
 #waiting p { font-size: 5vmin; font-weight: 400; color: var(--muted); line-height: 1.1; }
 
+
+/* ---------- cricket board ---------- */
+#cricket { display: grid; grid-template-rows: minmax(0, 1.43fr) minmax(0, 1fr) auto; gap: var(--pad); min-height: 0; }
+.cTop { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: var(--pad); min-height: 0; }
+.cMain { align-items: center; justify-content: center; text-align: center; gap: 0.4vmin; padding-top: 1.2vmin; padding-bottom: 1.2vmin; }
+.cFit { width: 100%; text-align: center; overflow: hidden; white-space: nowrap; }
+.cFit > span { display: inline-block; }
+#cTeam { font-size: min(7.5vmin, 10cqw); font-weight: 700; color: var(--gold); line-height: 1; letter-spacing: 0.02em; }
+#cScore { font-size: min(23vmin, 32cqw); font-weight: 700; line-height: 0.85; font-variant-numeric: tabular-nums; }
+#cScore.bump { animation: bump 0.7s ease-out; }
+.cMeta { font-size: 5.5vmin; font-weight: 600; color: var(--cyan); line-height: 1; letter-spacing: 0.04em; }
+.cMeta small { font-size: 4vmin; font-weight: 500; color: var(--muted); letter-spacing: 0.06em; }
+.cInfo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: space-evenly; gap: 1vmin 1.5vmin; text-align: center; padding-top: 1.2vmin; padding-bottom: 1.2vmin; }
+.cRow.wide { grid-column: span 2; }
+.cRow { min-width: 0; }
+.cRow .l { font-size: 3.3vmin; font-weight: 500; letter-spacing: 0.06em; color: var(--muted); line-height: 1; white-space: nowrap; overflow: hidden; }
+.cRow .v { font-size: 6.5vmin; font-weight: 700; line-height: 1; }
+.cRow.big .v { font-size: 9.5vmin; color: var(--gold); }
+.cRow.res .v { font-size: 7.5vmin; color: var(--gold); white-space: normal; text-wrap: balance; line-height: 0.95; }
+.cRow.res .v.rs2 { font-size: 5vmin; }
+.cRow.res .v.rs3 { font-size: 4vmin; }
+.cMid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--pad); min-height: 0; }
+.cCard { justify-content: center; align-items: center; text-align: center; gap: 0.3vmin; padding-top: 1vmin; padding-bottom: 1vmin; }
+.cCard.strike { border-color: var(--gold); box-shadow: 0 0 3vmin rgba(255,215,0,0.35), 0 1.5vmin 4vmin rgba(0,0,0,0.45); }
+.cTag { font-size: 3vmin; font-weight: 500; letter-spacing: 0.1em; color: var(--muted); line-height: 1; }
+.cName { font-size: min(6vmin, 11cqw); font-weight: 700; line-height: 1; }
+.cBig { font-size: min(11vmin, 24cqw); font-weight: 700; line-height: 0.9; font-variant-numeric: tabular-nums; }
+.cBig small { font-size: 0.4em; color: var(--muted); font-weight: 500; }
+.cSub { font-size: 3.6vmin; font-weight: 500; color: var(--muted); line-height: 1; letter-spacing: 0.04em; }
+.cOverBar { flex-direction: row; align-items: center; gap: 2vmin; padding: 1vmin 2.2vmin; }
+.cOverLabel { font-size: 4vmin; font-weight: 600; letter-spacing: 0.1em; color: var(--muted); line-height: 1; white-space: nowrap; }
+#cBalls { display: flex; flex: 1; min-width: 0; gap: 1.3vmin; justify-content: center; align-items: center; }
+.cb {
+    width: 7.5vmin; aspect-ratio: 1; flex: 0 1 auto; min-width: 0; border-radius: 50%; border: 0.5vmin solid rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center; font-size: 3.4vmin; font-weight: 700; line-height: 1; overflow: hidden;
+}
+.cb.long { font-size: 2.3vmin; }
+.cb.empty { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.14); }
+.cb.dot { background: rgba(255,255,255,0.06); color: var(--muted); }
+.cb.run { background: rgba(54,209,220,0.14); border-color: rgba(54,209,220,0.7); color: var(--cyan); }
+.cb.extra { background: rgba(255,176,32,0.14); border-color: rgba(255,176,32,0.8); color: #ffb020; }
+.cb.boundary, .cb.six { background: rgba(124,255,0,0.2); border-color: #7cff00; color: #7cff00; }
+.cb.wicket { background: rgba(255,43,43,0.22); border-color: #ff2b2b; color: #ff6b6b; }
+
+
+/* ---------- cricket scorecard view ---------- */
+#cScorecard { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: var(--pad); min-height: 0; overflow: hidden; }
+.scHead { flex-direction: row; align-items: center; justify-content: space-between; gap: 2.5vmin; padding-top: 1.2vmin; padding-bottom: 1.2vmin; }
+.scTeam { flex: 1 1 0; min-width: 0; font-size: 7.5vmin; font-weight: 700; color: var(--gold); line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scScore { flex: 0 0 auto; font-size: 9.5vmin; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.scMeta { flex: 0 0 auto; font-size: 4.2vmin; font-weight: 500; line-height: 1; color: var(--cyan); letter-spacing: 0.04em; text-align: right; white-space: nowrap; }
+.scBody { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--pad); min-height: 0; }
+.scCol { min-height: 0; overflow: hidden; justify-content: flex-start; }
+.scCol .scTitle { flex: 0 0 auto; font-size: 3.2vmin; letter-spacing: 0.12em; color: var(--muted); line-height: 1; margin-bottom: 0.8vmin; }
+.scRows { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: flex-start; }
+.scRow { display: grid; align-items: center; line-height: 1.08; padding: 0.15em 0; border-bottom: 1px solid rgba(255,255,255,0.08); flex: 0 0 auto; }
+.scRow > span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scRow .num { text-align: right; font-variant-numeric: tabular-nums; }
+.scRow.hd { color: var(--muted); letter-spacing: 0.08em; border-bottom: 1px solid rgba(255,255,255,0.3); }
+.scRow.hd > span { font-size: 0.7em; }
+.scRow.bt { grid-template-columns: minmax(0, 1fr) 2.2em 2.2em 1.9em 1.9em 2.6em; gap: 0 0.35em; }
+.scRow.bw { grid-template-columns: minmax(0, 1fr) 2.2em 1.6em 2em 1.6em 3.2em; gap: 0 0.35em; }
+.scNm { display: flex; align-items: baseline; gap: 0.5em; }
+.scNm b { flex: 0 1 auto; max-width: 58%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.scNm i { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-style: normal; font-size: 0.68em; color: var(--muted); }
+.scRow.atc .scNm i { color: var(--cyan); }
+.scRow.stk { color: var(--gold); }
+.scRow.stk .scNm i { color: var(--gold); }
+.scRow .rr { font-weight: 700; }
+.scNote { flex: 0 0 auto; margin-top: 0.9vmin; font-size: 0.8em; color: var(--muted); line-height: 1.1; overflow: hidden; }
+.scNote b { color: var(--ink); font-weight: 600; }
+.scFow { flex: 1 1 0; min-height: 0; }
+#scBat .scRows { font-size: min(4.4vmin, 4.6cqw, calc(56vmin / (var(--n, 12) * 1.4))); }
+#scBowl .scRows { font-size: min(3.8vmin, 5.2cqw, calc(38vmin / (var(--n, 8) * 1.4))); }
+#scBowl .scFow { font-size: 2.6vmin; }
+
 /* Very tall/narrow windows: stack the board */
 @media (max-aspect-ratio: 1/1) {
     .board { grid-template-columns: 1fr; grid-template-rows: repeat(3, minmax(0, auto)); overflow: hidden; }
     .score { font-size: min(40cqw, 24vmin); }
+    #clock { font-size: min(36cqw, 20vmin); }
     .brand span { display: none; }
+    #cricket { grid-template-rows: auto auto auto; align-content: start; }
+    .cTop { grid-template-columns: 1fr; }
+    .cMid { grid-template-columns: 1fr 1fr; }
+    .cMid .cBowler { grid-column: span 2; }
+    #cScore { font-size: min(21vmin, 32cqw); }
+    .scBody { grid-template-columns: 1fr; grid-template-rows: auto auto; align-content: start; }
+    .scBody .scCol { overflow: visible; }
+    .scHead { flex-wrap: wrap; }
+    .scTeam { flex-basis: 100%; }
+    #scBat .scRows { font-size: min(4.4vmin, calc(40vh / (var(--n, 12) * 1.4))); }
+    #scBowl .scRows { font-size: min(3.5vmin, calc(19vh / (var(--n, 8) * 1.4))); }
+    #scBowl .scFow { font-size: 2.8vmin; flex: 0 0 auto; }
 }
 @media (prefers-reduced-motion: reduce) {
     .score.bump, .clockBox.running { animation: none; }
@@ -143,7 +233,7 @@ body.idle { cursor: none; }
         <div id="sportName"></div>
     </header>
 
-    <main class="board">
+    <main class="board" id="board">
         <section class="panel" id="homePanel">
             <div class="name" id="homeName"></div>
             <div class="score" id="homeScore">0</div>
@@ -164,6 +254,38 @@ body.idle { cursor: none; }
             <div class="stats" id="awayStats"></div>
         </section>
     </main>
+
+    <section id="cScorecard" hidden>
+        <div class="panel scHead">
+            <div class="scTeam" id="scTeam"></div>
+            <div class="scScore" id="scScore"></div>
+            <div class="scMeta" id="scMeta"></div>
+        </div>
+        <div class="scBody">
+            <div class="panel scCol" id="scBat"></div>
+            <div class="panel scCol" id="scBowl"></div>
+        </div>
+    </section>
+
+    <section id="cricket" hidden>
+        <div class="cTop">
+            <div class="panel cMain">
+                <div class="cFit" id="cTeamBox"><span id="cTeam"></span></div>
+                <div class="cFit" id="cScoreBox"><span id="cScore">0/0</span></div>
+                <div class="cMeta"><span id="cOvers">0.0</span> <small id="cOversOf"></small></div>
+            </div>
+            <div class="panel cInfo" id="cInfo"></div>
+        </div>
+        <div class="cMid">
+            <div class="panel cCard" id="cStriker"></div>
+            <div class="panel cCard" id="cNon"></div>
+            <div class="panel cCard cBowler" id="cBowler"></div>
+        </div>
+        <div class="panel cOverBar">
+            <div class="cOverLabel">THIS OVER</div>
+            <div id="cBalls"></div>
+        </div>
+    </section>
 </div>
 
 <div id="timeoutBanner" hidden>
@@ -186,7 +308,8 @@ body.idle { cursor: none; }
     var SPORT = {
         volleyball: { title: 'VOLLEYBALL', periodLabel: 'SET',    teamStats: ['timeouts'] },
         basketball: { title: 'BASKETBALL', periodLabel: 'PERIOD', teamStats: ['fouls', 'timeouts'] },
-        badminton:  { title: 'BADMINTON',  periodLabel: null,     teamStats: [] }
+        badminton:  { title: 'BADMINTON',  periodLabel: null,     teamStats: [] },
+        cricket:    { title: 'CRICKET',    periodLabel: null,     teamStats: [], custom: true }
     };
     var STAT_LABEL = { fouls: 'FOULS', timeouts: 'TIMEOUTS' };
 
@@ -225,6 +348,207 @@ body.idle { cursor: none; }
         });
     }
 
+    // Shrinks the clock only if it would be wider than its box (e.g. fallback font, 3-digit minutes).
+    function fitClock() {
+        var box = $('clockBox'), clock = $('clock');
+        if (!box || box.offsetParent === null) return;
+        clock.style.fontSize = '';
+        var cs = getComputedStyle(box);
+        var avail = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        var w = clock.offsetWidth;
+        if (w > avail && avail > 0) {
+            clock.style.fontSize = (parseFloat(getComputedStyle(clock).fontSize) * avail / w * 0.97) + 'px';
+        }
+    }
+
+
+    // ---------------- cricket ----------------
+    function fitIn(box, span) {
+        if (!box || !span || box.offsetParent === null) return;
+        span.style.fontSize = '';
+        var avail = box.clientWidth, w = span.offsetWidth;
+        if (avail > 0 && w > avail) {
+            span.style.fontSize = (parseFloat(getComputedStyle(span).fontSize) * avail / w * 0.96) + 'px';
+        }
+    }
+    function fitCricket() {
+        if ($('cricket').hidden) return;
+        fitIn($('cTeamBox'), $('cTeam'));
+        fitIn($('cScoreBox'), $('cScore'));
+        Array.prototype.forEach.call(document.querySelectorAll('#cricket .cFit.dyn'), function (b) { fitIn(b, b.firstChild); });
+    }
+    function mk(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+    function fitBox(text, cls) {
+        var box = mk('div', 'cFit dyn'); var sp = mk('span', cls, text); box.appendChild(sp); return box;
+    }
+
+    function batterCard(el, b, label, strike) {
+        var sig = JSON.stringify([b, label, strike]);
+        if (el.dataset.sig === sig) return;
+        el.dataset.sig = sig;
+        el.textContent = '';
+        el.classList.toggle('strike', !!strike);
+        el.appendChild(mk('div', 'cTag', label));
+        if (!b) { el.appendChild(fitBox('—', 'cName')); return; }
+        el.appendChild(fitBox(b.name + (strike ? ' *' : ''), 'cName'));
+        var big = mk('div', 'cBig', String(b.runs));
+        big.appendChild(document.createTextNode(' ')); big.appendChild(mk('small', null, '(' + b.balls + ')'));
+        el.appendChild(big);
+        el.appendChild(fitBox('4s ' + b.fours + '  ·  6s ' + b.sixes + '  ·  SR ' + b.sr, 'cSub'));
+    }
+    function bowlerCard(el, bw) {
+        var sig = JSON.stringify(bw);
+        if (el.dataset.sig === sig) return;
+        el.dataset.sig = sig;
+        el.textContent = '';
+        el.appendChild(mk('div', 'cTag', 'BOWLING'));
+        if (!bw) { el.appendChild(fitBox('—', 'cName')); return; }
+        el.appendChild(fitBox(bw.name, 'cName'));
+        el.appendChild(mk('div', 'cBig', bw.wkts + '-' + bw.runs));
+        el.appendChild(fitBox(bw.overs + ' OV  ·  ' + bw.maidens + ' MDN  ·  ECON ' + bw.econ, 'cSub'));
+    }
+
+    function infoRows(c) {
+        var rows = [];
+        var pr = c.prior ? c.prior.runs + '/' + c.prior.wkts + ' (' + c.prior.overs + ')' : null;
+        if (c.status === 'complete') {
+            rows.push({ l: 'RESULT', v: c.result || 'MATCH COMPLETE', cls: 'res wide' });
+            if (pr) rows.push({ l: '1ST INNS', v: pr });
+            rows.push({ l: 'RUN RATE', v: c.bat.crr });
+        } else if (c.status === 'break') {
+            rows.push({ l: 'INNINGS BREAK', v: c.innings === 1 ? c.bat.runs + '/' + c.bat.wkts + ' (' + c.bat.overs + ')' : 'GET READY', cls: 'big wide' });
+            rows.push({ l: 'TARGET', v: String(c.target != null ? c.target : c.bat.runs + 1) });
+            rows.push({ l: 'OVERS', v: String(c.maxOvers) });
+        } else if (c.innings === 2 && c.target != null) {
+            rows.push({ l: 'NEED', v: c.need + ' off ' + c.ballsLeft + (c.ballsLeft === 1 ? ' ball' : ' balls'), cls: 'big wide' });
+            rows.push({ l: 'TARGET', v: String(c.target) });
+            rows.push({ l: 'REQ. RATE', v: c.rrr == null ? '—' : c.rrr });
+            rows.push({ l: 'RUN RATE', v: c.bat.crr });
+            if (pr) rows.push({ l: '1ST INNINGS', v: pr });
+        } else {
+            rows.push({ l: 'RUN RATE', v: c.bat.crr, cls: 'big wide' });
+            rows.push({ l: 'EXTRAS', v: String(c.extras) });
+            rows.push({ l: 'LAST WICKET', v: c.lastWkt || '—' });
+        }
+        return rows;
+    }
+
+
+    // ---------------- cricket scorecard view ----------------
+    function renderScorecard(c) {
+        var sc = c.sc;
+        $('cricket').hidden = true; $('cScorecard').hidden = false;
+        $('sportName').textContent = 'SCORECARD';
+        $('scTeam').textContent = sc.team;
+        $('scScore').textContent = sc.runs + '/' + sc.wkts;
+        $('scMeta').textContent = (sc.n === 1 ? '1ST' : '2ND') + ' INNINGS  ·  ' + sc.overs + ' / ' + sc.max + ' OV  ·  RR ' + sc.rr;
+
+        var bat = $('scBat'), bsig = JSON.stringify(sc);
+        if (bat.dataset.sig === bsig) return;
+        bat.dataset.sig = bsig;
+
+        // batting
+        bat.textContent = '';
+        bat.appendChild(mk('div', 'scTitle', 'BATTING · ' + sc.team.toUpperCase()));
+        var rows = mk('div', 'scRows');
+        rows.style.setProperty('--n', String(sc.bat.length + 2.6));
+        bat.style.setProperty('--n', String(sc.bat.length + 2.6));
+        var hd = mk('div', 'scRow bt hd');
+        ['BATTER', 'R', 'B', '4s', '6s', 'SR'].forEach(function (h, i) { hd.appendChild(mk('span', i ? 'num' : '', h)); });
+        rows.appendChild(hd);
+        sc.bat.forEach(function (b) {
+            var r = mk('div', 'scRow bt' + (b.no ? ' atc' : '') + (b.st ? ' stk' : ''));
+            var nm = mk('span', 'scNm');
+            nm.appendChild(mk('b', null, b.n + (b.st ? ' *' : '')));
+            nm.appendChild(mk('i', null, b.h));
+            r.appendChild(nm);
+            [b.r, b.b, b.f, b.s, b.sr].forEach(function (v, i) { r.appendChild(mk('span', 'num' + (i === 0 ? ' rr' : ''), String(v))); });
+            rows.appendChild(r);
+        });
+        rows.appendChild(mk('div', 'scNote', '')).innerHTML = '';
+        var note = rows.lastChild; note.appendChild(mk('b', null, 'Extras ')); note.appendChild(document.createTextNode(sc.ex));
+        bat.appendChild(rows);
+        // keep the whole block inside the panel even with a long squad
+        bat.style.setProperty('--n', String(sc.bat.length + 2.6));
+
+        // bowling + fall of wickets
+        var bw = $('scBowl');
+        bw.textContent = '';
+        bw.style.setProperty('--n', String(Math.max(sc.bowl.length, 1) + 1.2));
+        bw.appendChild(mk('div', 'scTitle', 'BOWLING · ' + sc.bowlTeam.toUpperCase()));
+        var br = mk('div', 'scRows');
+        br.style.flex = '0 0 auto';
+        br.style.setProperty('--n', String(Math.max(sc.bowl.length, 1) + 1.2));
+        var bh = mk('div', 'scRow bw hd');
+        ['BOWLER', 'O', 'M', 'R', 'W', 'ECON'].forEach(function (h, i) { bh.appendChild(mk('span', i ? 'num' : '', h)); });
+        br.appendChild(bh);
+        sc.bowl.forEach(function (b) {
+            var r = mk('div', 'scRow bw');
+            r.appendChild(mk('span', 'scNm', b.n));
+            [b.o, b.m, b.r, b.w, b.e].forEach(function (v, i) { r.appendChild(mk('span', 'num' + (i === 3 ? ' rr' : ''), String(v))); });
+            br.appendChild(r);
+        });
+        bw.appendChild(br);
+        var fow = mk('div', 'scNote scFow');
+        fow.appendChild(mk('b', null, 'Fall of wickets  '));
+        fow.appendChild(document.createTextNode(sc.fow.length ? sc.fow.join('  ·  ') : 'none'));
+        if (sc.dnb && sc.dnb.length) {
+            fow.appendChild(document.createElement('br'));
+            fow.appendChild(mk('b', null, 'Yet to bat  '));
+            fow.appendChild(document.createTextNode(sc.dnb.join(', ')));
+        }
+        bw.appendChild(fow);
+    }
+
+    function renderCricket(state) {
+        var c = state.cricket;
+        $('board').hidden = true;
+        if (c.view === 'card' && c.sc) { renderScorecard(c); return; }
+        $('cScorecard').hidden = true; $('cricket').hidden = false;
+        $('sportName').textContent = c.status === 'complete' ? 'CRICKET · FINAL'
+            : 'CRICKET · ' + (c.innings === 1 ? '1ST' : '2ND') + ' INNINGS';
+        $('cTeam').textContent = c.bat.name;
+        var scoreTxt = c.bat.runs + '/' + c.bat.wkts;
+        var scoreEl = $('cScore');
+        if (scoreEl.textContent !== scoreTxt) {
+            var had = scoreEl.dataset.init;
+            scoreEl.textContent = scoreTxt; scoreEl.dataset.init = '1';
+            if (had) { scoreEl.classList.remove('bump'); void scoreEl.offsetWidth; scoreEl.classList.add('bump'); }
+        }
+        $('cOvers').textContent = c.bat.overs + ' OVERS';
+        $('cOversOf').textContent = '/ ' + c.maxOvers;
+
+        var info = $('cInfo'), rows = infoRows(c), sig = JSON.stringify(rows);
+        if (info.dataset.sig !== sig) {
+            info.dataset.sig = sig; info.textContent = '';
+            rows.forEach(function (r) {
+                var d = mk('div', 'cRow' + (r.cls ? ' ' + r.cls : ''));
+                d.appendChild(mk('div', 'l', r.l));
+                var v = mk('div', 'cFit dyn'); v.style.whiteSpace = r.cls === 'res' ? 'normal' : 'nowrap';
+                var vs = mk('span', 'v', r.v);
+                if (r.cls && r.cls.indexOf('res') !== -1) vs.className = 'v ' + (r.v.length > 34 ? 'rs3' : r.v.length > 14 ? 'rs2' : 'rs1');
+                v.appendChild(vs);
+                d.appendChild(v); info.appendChild(d);
+            });
+        }
+
+        batterCard($('cStriker'), c.striker, 'ON STRIKE', true);
+        batterCard($('cNon'), c.nonStriker, 'NON-STRIKER', false);
+        bowlerCard($('cBowler'), c.bowler);
+
+        var balls = c.thisOver || [], bsig = JSON.stringify(balls);
+        var bx = $('cBalls');
+        if (bx.dataset.sig !== bsig) {
+            bx.dataset.sig = bsig; bx.textContent = '';
+            var n = Math.max(6, balls.length);
+            for (var i = 0; i < n; i++) {
+                var b = balls[i];
+                bx.appendChild(mk('div', 'cb ' + (b ? b.c + (b.s.length > 3 ? ' long' : '') : 'empty'), b ? b.s : ''));
+            }
+        }
+        fitCricket();
+    }
+
     function bump(el) {
         el.classList.remove('bump');
         void el.offsetWidth;             // restart animation
@@ -236,6 +560,7 @@ body.idle { cursor: none; }
         if (!usable) {
             current = null; prevScores = null;
             $('match').hidden = true;
+            $('cricket').hidden = true; $('cScorecard').hidden = true;
             $('timeoutBanner').hidden = true;
             $('waiting').hidden = false;
             document.title = 'Glenforest Audience Display';
@@ -248,6 +573,14 @@ body.idle { cursor: none; }
         $('match').hidden = false;
         $('sportName').textContent = cfg.title;
         document.title = cfg.title + ' | Glenforest Audience Display';
+
+        if (cfg.custom) {
+            if (!state.cricket) { current = null; $('match').hidden = true; $('waiting').hidden = false; return; }
+            $('timeoutBanner').hidden = true;
+            renderCricket(state);
+            return;
+        }
+        $('board').hidden = false; $('cricket').hidden = true; $('cScorecard').hidden = true;
 
         $('homeName').textContent = state.home.name;
         $('awayName').textContent = state.away.name;
@@ -272,6 +605,7 @@ body.idle { cursor: none; }
 
         $('clockBox').classList.toggle('running', state.timer.running);
         $('clock').textContent = fmtClock(remainingMs());
+        fitClock();
 
         var to = state.timeout;
         var banner = $('timeoutBanner');
@@ -288,11 +622,15 @@ body.idle { cursor: none; }
     function tick() {
         if (current) {
             var txt = fmtClock(remainingMs());
-            if (txt !== lastShown) { $('clock').textContent = txt; lastShown = txt; }
+            if (txt !== lastShown) { $('clock').textContent = txt; lastShown = txt; fitClock(); }
         }
         requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
+
+    function fitAll() { fitClock(); fitCricket(); }
+    window.addEventListener('resize', fitAll);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);
 
     AudienceSync.subscribe(render);
 
