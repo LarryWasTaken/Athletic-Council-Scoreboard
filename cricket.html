@@ -160,6 +160,27 @@
 
         /* ---------- this over ---------- */
         .balls-display { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.75rem; padding: 0.5rem 0; min-height: 4.5rem; }
+        /* ---------- over history ---------- */
+        .over-hist-section { grid-column: 1 / -1; min-width: 0; }
+        .oh-list { display: flex; flex-direction: column; gap: 0.5rem; max-height: 44vh; overflow-y: auto; padding-right: 0.25rem; }
+        .oh-row { display: flex; align-items: center; gap: 1rem; padding: 0.55rem 0.8rem; border: 1px solid #2A3A66; border-radius: 0.75rem; background: rgba(15, 23, 42, 0.45); }
+        .oh-row.live { border-color: rgba(60, 240, 255, 0.7); }
+        .oh-no { flex: 0 0 5.2rem; display: flex; flex-direction: column; gap: 0.15rem; }
+        .oh-no b { font-family: 'Courier New', monospace; font-size: 0.8rem; color: #F8FAFF; letter-spacing: 0.04em; }
+        .oh-no span { font-family: 'Courier New', monospace; font-size: 0.7rem; color: #7A88B5; }
+        .oh-balls { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+        .oh-ball { flex: 0 0 auto; width: 2.1rem; height: 2.1rem; border-radius: 50%; border: 2px solid #2A3A66; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; background: rgba(30, 41, 59, 0.3); color: #B6C2E2; overflow: hidden; }
+        .oh-ball.long { font-size: 0.55rem; }
+        .oh-ball.run { background: rgba(60, 240, 255, 0.1); border-color: rgba(60, 240, 255, 0.5); color: #3CF0FF; }
+        .oh-ball.extra { background: rgba(255, 176, 32, 0.12); border-color: rgba(255, 176, 32, 0.7); color: #FFB020; }
+        .oh-ball.boundary, .oh-ball.six { background: rgba(124, 255, 0, 0.2); border-color: #7CFF00; color: #7CFF00; }
+        .oh-ball.wicket { background: rgba(255, 43, 43, 0.2); border-color: #FF2B2B; color: #FF6B6B; }
+        .oh-info { flex: 0 1 14rem; min-width: 0; text-align: right; }
+        .oh-bowler { font-weight: 700; font-size: 1rem; color: #F8FAFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .oh-bats { font-size: 0.8rem; color: #B6C2E2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .arch-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid rgba(42, 58, 102, 0.5); flex-wrap: wrap; }
+        .arch-info { flex: 1 1 14rem; min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+        .arch-info span { font-size: 0.8rem; color: #7A88B5; }
         .over-title { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
         .over-title span:last-child { color: #7A88B5; }
         .ball-sphere { width: 3.25rem; height: 3.25rem; border-radius: 50%; border: 2px solid; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; flex-shrink: 0; }
@@ -249,6 +270,8 @@
             <div class="toolbar-actions">
                 <button class="tool-btn" id="btnScorecard" type="button">Scorecard</button>
                 <button class="tool-btn" id="btnAudView" type="button" title="Choose what the audience screen shows">Audience: Live board</button>
+                <button class="tool-btn" id="btnOverHist" type="button" title="Show every over of this innings with the bowler and batters">Over History</button>
+                <button class="tool-btn" id="btnData" type="button" title="Save, export or upload this game's stats">Game Data</button>
                 <button class="tool-btn" id="btnEndInnings" type="button">End Innings</button>
                 <button class="tool-btn" id="btnReopen" type="button" title="Go back to an innings that was ended by mistake">Reopen Innings</button>
                 <button class="tool-btn" id="btnNewMatch" type="button">New Match</button>
@@ -406,6 +429,14 @@
                 <div class="glass-card" style="height:100%;">
                     <h3 class="card-title over-title"><span>This Over</span><span id="over-meta"></span></h3>
                     <div class="balls-display" id="balls-container"></div>
+                </div>
+            </div>
+
+            <!-- Over-by-over history (toggle) -->
+            <div class="over-hist-section" id="overHist" hidden>
+                <div class="glass-card">
+                    <h3 class="card-title" id="ohTitle">Over by over</h3>
+                    <div class="oh-list" id="ohList"></div>
                 </div>
             </div>
         </div>
@@ -623,7 +654,7 @@
                     var na = a.value.trim() || 'Team A', nb = b.value.trim() || 'Team B';
                     if (same(na, nb)) { toast('Give the two teams different names'); return false; }
                     M = {
-                        v: 1, maxOvers: o, first: parseInt(first.value, 10), innings: 1, status: 'startinn', result: '',
+                        v: 1, id: 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), started: new Date().toISOString(), maxOvers: o, first: parseInt(first.value, 10), innings: 1, status: 'startinn', result: '',
                         teams: [
                             { name: na, size: s, squad: parseSquad(sqA.value) },
                             { name: nb, size: s, squad: parseSquad(sqB.value) }
@@ -695,6 +726,8 @@
             var bw = inn.bowlers[inn.cur];
             var legal = (t === 'runs' || t === 'b' || t === 'lb');
             var total = 0, bowlerRuns = 0, sym, cls;
+            // First delivery of the over: note who faced it, then the other batter (for over history / records).
+            if (!inn.over.balls.length) inn.over.bat = [st.name, inn.nonStriker >= 0 ? inn.batters[inn.nonStriker].name : ''].filter(Boolean);
 
             if (t === 'runs') {
                 total = r; bowlerRuns = r;
@@ -863,6 +896,269 @@
             }
         }
 
+        /* ===================== over-by-over history ===================== */
+
+        var overHistOn = false;
+        try { overHistOn = localStorage.getItem('gfss.cricket.overhist') === '1'; } catch (e) {}
+
+        function allOvers(inn) {
+            if (!inn) return [];
+            var list = (inn.overs || []).slice();
+            if (inn.over && inn.over.balls && inn.over.balls.length) list.push(inn.over);
+            return list;
+        }
+
+        function overBowlerName(inn, o) {
+            return (o.bowlers || []).map(function (i) { return inn.bowlers[i] ? inn.bowlers[i].name : '?'; }).join(' / ');
+        }
+
+        function renderOverHist() {
+            var sec = $('overHist'); if (!sec) return;
+            var btn = $('btnOverHist');
+            btn.classList.toggle('gold', overHistOn);
+            btn.textContent = overHistOn ? 'Over History: On' : 'Over History';
+            var inn = M ? cur() : null;
+            if (!overHistOn || !inn) { sec.hidden = true; return; }
+            var list = allOvers(inn);
+            var sig = JSON.stringify([list, inn.bowlers.map(function (b) { return b.name; }), M.innings]);
+            sec.hidden = false;
+            if (sec.dataset.sig === sig) return;
+            sec.dataset.sig = sig;
+            $('ohTitle').textContent = 'Over by over · ' + M.teams[inn.bat].name + ' (' + (M.innings === 1 ? '1st' : '2nd') + ' innings)';
+            var box = $('ohList'); box.innerHTML = '';
+            if (!list.length) { box.appendChild(el('p', 'note', 'No balls bowled yet.')); return; }
+            for (var i = list.length - 1; i >= 0; i--) {
+                var o = list[i];
+                var live = (i === list.length - 1) && !o.done;
+                var row = el('div', 'oh-row' + (live ? ' live' : ''));
+                var no = el('div', 'oh-no');
+                no.appendChild(el('b', null, 'OVER ' + (i + 1)));
+                no.appendChild(el('span', null, o.runs + (o.runs === 1 ? ' run' : ' runs') + (live ? ' · live' : '')));
+                row.appendChild(no);
+                var balls = el('div', 'oh-balls');
+                o.balls.forEach(function (b) { balls.appendChild(el('div', 'oh-ball ' + b.c + (b.s.length > 2 ? ' long' : ''), b.s)); });
+                row.appendChild(balls);
+                var info = el('div', 'oh-info');
+                info.appendChild(el('div', 'oh-bowler', overBowlerName(inn, o) || '—'));
+                if (o.bat && o.bat.length) info.appendChild(el('div', 'oh-bats', o.bat.join(' · ')));
+                row.appendChild(info);
+                box.appendChild(row);
+            }
+        }
+
+        /* ===================== game data: record, archive, export, database ===================== */
+
+        var ARCHIVE_KEY = 'gfss.cricket.archive.v1';
+        var SENT_KEY = 'gfss.cricket.sent.v1';
+        var DB_KEY = 'gfss.cricket.db.v1';
+        var triedSig = {};      // matchId -> signature we already attempted this page load (no retry loops)
+
+        function lsGet(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+        function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+        function dbCfg() { var c = lsGet(DB_KEY, {}); return { url: (c.url || '').trim(), key: c.key || '' }; }
+        function hashStr(s) { var h = 5381; for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return String(h); }
+
+        function ensureId() {
+            if (!M) return;
+            if (!M.id) { M.id = 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); M.started = M.started || new Date().toISOString(); save(); }
+        }
+
+        function inningsRecord(k) {
+            var inn = M.inns[k]; if (!inn) return null;
+            var bt = M.teams[inn.bat], ft = M.teams[1 - inn.bat], ex = inn.extras;
+            return {
+                n: k + 1, team: bt.name, bowlingTeam: ft.name,
+                runs: inn.runs, wickets: inn.wickets, legalBalls: inn.legalBalls, overs: oversStr(inn.legalBalls),
+                runRate: +rate(inn.runs, inn.legalBalls).toFixed(2), completed: !!inn.done,
+                extras: { total: ex.wd + ex.nb + ex.b + ex.lb, wides: ex.wd, noBalls: ex.nb, byes: ex.b, legByes: ex.lb },
+                batters: inn.batters.map(function (b, i) {
+                    return { order: i + 1, name: b.name, runs: b.runs, balls: b.balls, fours: b.fours, sixes: b.sixes, strikeRate: sr(b),
+                             out: !!b.out, dismissal: b.out ? dismissalText(b) : 'not out', how: b.how || '', bowler: b.bowler || '', fielder: b.fielder || '' };
+                }),
+                didNotBat: remainingSquad(inn),
+                bowlers: inn.bowlers.map(function (bw) {
+                    return { name: bw.name, overs: oversStr(bw.balls), balls: bw.balls, maidens: bw.maidens, runs: bw.runs, wickets: bw.wickets,
+                             economy: +rate(bw.runs, bw.balls).toFixed(2) };
+                }),
+                fallOfWickets: inn.fow.map(function (f) { return { wicket: f.wkt, score: f.score, batter: f.name, over: f.over }; }),
+                overByOver: allOvers(inn).map(function (o, i) {
+                    return { over: i + 1, bowler: overBowlerName(inn, o), batters: o.bat || [], runs: o.runs, legalBalls: o.legal,
+                             balls: o.balls.map(function (b) { return b.s; }) };
+                })
+            };
+        }
+
+        function buildRecord() {
+            ensureId();
+            var first = M.teams[M.first];
+            return {
+                schema: 1, app: 'gfss-ac cricket',
+                matchId: M.id, date: M.started || new Date().toISOString(), savedAt: new Date().toISOString(),
+                status: M.status === 'complete' ? 'complete' : 'in-progress', result: M.result || '',
+                maxOvers: M.maxOvers, playersPerSide: M.teams[0].size, battedFirst: first.name,
+                teams: M.teams.map(function (t) { return { name: t.name, squad: t.squad.slice() }; }),
+                target: M.inns[0] ? M.inns[0].runs + 1 : null,
+                innings: [inningsRecord(0), inningsRecord(1)].filter(Boolean)
+            };
+        }
+
+        function archiveSave(rec) {
+            var a = lsGet(ARCHIVE_KEY, []).filter(function (r) { return r.matchId !== rec.matchId; });
+            a.unshift(rec);
+            lsSet(ARCHIVE_KEY, a.slice(0, 60));
+        }
+
+        function sendRecord(rec, done) {
+            var c = dbCfg();
+            if (!c.url) { done(false, 'No database address set'); return; }
+            if (!/^https:\/\//i.test(c.url)) { done(false, 'The database address must start with https://'); return; }
+            var sg = hashStr(JSON.stringify(rec.innings) + rec.result + rec.status);
+            triedSig[rec.matchId] = sg;
+            fetch(c.url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                           body: JSON.stringify({ key: c.key, record: rec }) })
+                .then(function () {
+                    var s = lsGet(SENT_KEY, {}); s[rec.matchId] = { sig: sg, at: new Date().toISOString() }; lsSet(SENT_KEY, s);
+                    done(true);
+                })
+                .catch(function () { done(false, 'Could not reach the database (check the internet connection)'); });
+        }
+
+        function recSig(rec) { return hashStr(JSON.stringify(rec.innings) + rec.result + rec.status); }
+        function isSent(rec) { var s = lsGet(SENT_KEY, {})[rec.matchId]; return !!s && s.sig === recSig(rec); }
+
+        // Runs after every update: when a match is complete, keep a copy on this device and send it once.
+        function autoArchive() {
+            if (!M || M.status !== 'complete') return;
+            var rec = buildRecord();
+            var sg = recSig(rec);
+            var prev = lsGet(ARCHIVE_KEY, []).filter(function (r) { return r.matchId === rec.matchId; })[0];
+            if (!prev || recSig(prev) !== sg) { archiveSave(rec); toast('Game saved on this device'); }
+            if (dbCfg().url && !isSent(rec) && triedSig[rec.matchId] !== sg) {
+                sendRecord(rec, function (ok, why) { toast(ok ? 'Game sent to the database' : (why + '. It is saved here; use Game Data → Send.')); });
+            }
+        }
+
+        /* ---- downloads ---- */
+        function download(name, text, type) {
+            var blob = new Blob([text], { type: type || 'text/plain' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob); a.download = name;
+            document.body.appendChild(a); a.click();
+            setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+        }
+        function csvCell(v) { v = v == null ? '' : String(v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+        function csvRows(rows) { return rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n') + '\r\n'; }
+        function fileBase(rec) {
+            var d = (rec.date || '').slice(0, 10);
+            return ('cricket-' + d + '-' + rec.teams[0].name + '-vs-' + rec.teams[1].name).replace(/[^A-Za-z0-9\-]+/g, '_');
+        }
+
+        function recordCsv(rec) {
+            var out = [['Match', rec.teams[0].name + ' vs ' + rec.teams[1].name], ['Date', (rec.date || '').slice(0, 10)], ['Overs per innings', rec.maxOvers],
+                       ['Status', rec.status], ['Result', rec.result], ['Match ID', rec.matchId], []];
+            rec.innings.forEach(function (inn) {
+                out.push(['INNINGS ' + inn.n, inn.team, inn.runs + '/' + inn.wickets, inn.overs + ' overs', 'RR ' + inn.runRate, 'Extras ' + inn.extras.total]);
+                out.push(['Batting', 'Runs', 'Balls', '4s', '6s', 'SR', 'Dismissal']);
+                inn.batters.forEach(function (b) { out.push([b.name, b.runs, b.balls, b.fours, b.sixes, b.strikeRate, b.dismissal]); });
+                out.push([]);
+                out.push(['Bowling (' + inn.bowlingTeam + ')', 'Overs', 'Maidens', 'Runs', 'Wickets', 'Economy']);
+                inn.bowlers.forEach(function (b) { out.push([b.name, b.overs, b.maidens, b.runs, b.wickets, b.economy]); });
+                out.push([]);
+                out.push(['Fall of wickets', 'Wicket', 'Score', 'Over']);
+                inn.fallOfWickets.forEach(function (f) { out.push([f.batter, f.wicket, f.score, f.over]); });
+                out.push([]);
+                out.push(['Over by over', 'Bowler', 'Batters (first ball facer first)', 'Runs', 'Balls']);
+                inn.overByOver.forEach(function (o) { out.push(['Over ' + o.over, o.bowler, o.batters.join(' & '), o.runs, o.balls.join(' ')]); });
+                out.push([]);
+            });
+            return csvRows(out);
+        }
+
+        // Career-style totals across every game kept on this device.
+        function playersCsv(recs) {
+            var P = {};
+            function get(n, team) { var k = n.toLowerCase(); return P[k] || (P[k] = { name: n, team: team, games: {}, inns: 0, runs: 0, balls: 0, fours: 0, sixes: 0, notOuts: 0, hs: 0, bBalls: 0, bRuns: 0, bWkts: 0, bMdn: 0 }); }
+            recs.forEach(function (r) {
+                r.innings.forEach(function (inn) {
+                    inn.batters.forEach(function (b) {
+                        var p = get(b.name, inn.team); p.games[r.matchId] = 1; p.inns++; p.runs += b.runs; p.balls += b.balls; p.fours += b.fours; p.sixes += b.sixes;
+                        if (!b.out) p.notOuts++; if (b.runs > p.hs) p.hs = b.runs;
+                    });
+                    inn.bowlers.forEach(function (b) { var p = get(b.name, inn.bowlingTeam); p.games[r.matchId] = 1; p.bBalls += b.balls; p.bRuns += b.runs; p.bWkts += b.wickets; p.bMdn += b.maidens; });
+                });
+            });
+            var rows = [['Player', 'Team', 'Games', 'Bat inns', 'Runs', 'Balls faced', '4s', '6s', 'Not outs', 'High score', 'Average', 'Strike rate', 'Overs bowled', 'Maidens', 'Runs conceded', 'Wickets', 'Economy']];
+            Object.keys(P).sort().forEach(function (k) {
+                var p = P[k], outs = p.inns - p.notOuts;
+                rows.push([p.name, p.team, Object.keys(p.games).length, p.inns, p.runs, p.balls, p.fours, p.sixes, p.notOuts, p.hs,
+                           outs > 0 ? (p.runs / outs).toFixed(2) : '', p.balls ? (p.runs / p.balls * 100).toFixed(1) : '',
+                           oversStr(p.bBalls), p.bMdn, p.bRuns, p.bWkts, p.bBalls ? (p.bRuns / p.bBalls * 6).toFixed(2) : '']);
+            });
+            return csvRows(rows);
+        }
+
+        function showData() {
+            var body = el('div');
+            var cur0 = M && M.inns[0] ? buildRecord() : null;
+
+            body.appendChild(el('div', 'sub-label', 'This game'));
+            if (cur0) {
+                body.appendChild(el('p', 'note', cur0.teams[0].name + ' vs ' + cur0.teams[1].name + ' · ' + (cur0.status === 'complete' ? cur0.result : 'in progress') +
+                    '. Finished games are saved on this device automatically' + (dbCfg().url ? ' and sent to your database.' : '.')));
+                var r1 = el('div', 'modal-actions'); r1.style.justifyContent = 'flex-start'; r1.style.marginTop = '0.5rem';
+                [['Save on this device', function () { archiveSave(buildRecord()); toast('Saved on this device'); showData(); }],
+                 ['Download game (.json)', function () { var r = buildRecord(); download(fileBase(r) + '.json', JSON.stringify(r, null, 2), 'application/json'); }],
+                 ['Download game (.csv)', function () { var r = buildRecord(); download(fileBase(r) + '.csv', recordCsv(r), 'text/csv'); }],
+                 ['Send to database', function () {
+                     var r = buildRecord(); archiveSave(r);
+                     sendRecord(r, function (ok, why) { toast(ok ? 'Game sent to the database' : why); showData(); });
+                 }]].forEach(function (a) {
+                    var b = el('button', 'tool-btn', a[0]); b.type = 'button'; b.addEventListener('click', a[1]); r1.appendChild(b);
+                });
+                body.appendChild(r1);
+            } else {
+                body.appendChild(el('p', 'note', 'No game has started yet.'));
+            }
+
+            body.appendChild(el('div', 'sub-label', 'Database (Google Sheets)'));
+            var c = dbCfg();
+            var url = el('input'); url.type = 'text'; url.value = c.url; url.placeholder = 'https://script.google.com/macros/s/.../exec';
+            var key = el('input'); key.type = 'text'; key.value = c.key; key.placeholder = 'Secret word (same as in the script, optional)';
+            body.appendChild(field('Web app address', url));
+            body.appendChild(field('Secret word', key));
+            body.appendChild(el('p', 'note', 'Paste the address you get after deploying the Apps Script (see the setup steps that came with this page). It is kept only in this browser. Browsers hide the database\u2019s reply, so check the Google Sheet to confirm a game arrived.'));
+            var rs = el('div', 'modal-actions'); rs.style.justifyContent = 'flex-start';
+            var sv = el('button', 'tool-btn gold', 'Save database settings'); sv.type = 'button';
+            sv.addEventListener('click', function () { lsSet(DB_KEY, { url: url.value.trim(), key: key.value }); toast('Database settings saved'); });
+            rs.appendChild(sv); body.appendChild(rs);
+
+            var recs = lsGet(ARCHIVE_KEY, []);
+            body.appendChild(el('div', 'sub-label', 'Games saved on this device (' + recs.length + ')'));
+            if (!recs.length) body.appendChild(el('p', 'note', 'Nothing saved yet.'));
+            recs.forEach(function (r) {
+                var row = el('div', 'arch-row');
+                var info = el('div', 'arch-info');
+                info.appendChild(el('b', null, r.teams[0].name + ' vs ' + r.teams[1].name));
+                info.appendChild(el('span', null, (r.date || '').slice(0, 10) + ' · ' + (r.status === 'complete' ? r.result : 'in progress') + ' · ' + (isSent(r) ? 'sent ✓' : 'not sent')));
+                row.appendChild(info);
+                [['JSON', function () { download(fileBase(r) + '.json', JSON.stringify(r, null, 2), 'application/json'); }],
+                 ['CSV', function () { download(fileBase(r) + '.csv', recordCsv(r), 'text/csv'); }],
+                 ['Send', function () { sendRecord(r, function (ok, why) { toast(ok ? 'Game sent to the database' : why); showData(); }); }]].forEach(function (a) {
+                    var b = el('button', 'tool-btn', a[0]); b.type = 'button'; b.addEventListener('click', a[1]); row.appendChild(b);
+                });
+                body.appendChild(row);
+            });
+            if (recs.length) {
+                var r3 = el('div', 'modal-actions'); r3.style.justifyContent = 'flex-start';
+                [['Download player stats (.csv)', function () { download('cricket-player-stats.csv', playersCsv(recs), 'text/csv'); }],
+                 ['Download all games (.json)', function () { download('cricket-all-games.json', JSON.stringify(recs, null, 2), 'application/json'); }]].forEach(function (a) {
+                    var b = el('button', 'tool-btn', a[0]); b.type = 'button'; b.addEventListener('click', a[1]); r3.appendChild(b);
+                });
+                body.appendChild(r3);
+            }
+            openModal('Game data', body, [{ label: 'Close', cls: 'gold' }], { wide: true, onClose: function () {}, noFocus: true });
+        }
+
         // Go back into an innings that was ended by mistake (End Innings button, or a finished innings).
         // which = 1: back to the 1st innings (any 2nd-innings scoring is thrown away).
         // which = 2: resume the 2nd innings after the match was marked complete.
@@ -960,7 +1256,7 @@
             // Choosing the bowler for a new over is part of the ball that ended the last over, so Undo
             // skips straight back over it. A mid-over change gets its own undo step.
             if (inn.cur >= 0) saveHistory();
-            if (inn.over.done) inn.over = freshOver();
+            if (inn.over.done) { inn.overs = inn.overs || []; inn.overs.push(inn.over); inn.over = freshOver(); }
             inn.cur = idx;
             if (inn.over.bowlers.indexOf(idx) === -1) inn.over.bowlers.push(idx);
             save(); update();
@@ -1400,7 +1696,7 @@
             });
         }
 
-        function update() { render(); publish(); firstRender = false; }
+        function update() { render(); renderOverHist(); publish(); autoArchive(); firstRender = false; }
 
         /* ===================== wiring ===================== */
 
@@ -1451,6 +1747,12 @@
                 this.blur();
             });
             $('btnReopen').addEventListener('click', showReopen);
+            $('btnData').addEventListener('click', showData);
+            $('btnOverHist').addEventListener('click', function () {
+                overHistOn = !overHistOn;
+                try { localStorage.setItem('gfss.cricket.overhist', overHistOn ? '1' : '0'); } catch (e) {}
+                update(); this.blur();
+            });
             $('btnEndInnings').addEventListener('click', function () {
                 if (!M || M.status !== 'live') { toast('There is no innings in progress'); return; }
                 confirmDialog('End innings?', 'End the ' + (M.innings === 1 ? '1st' : '2nd') + ' innings now (declaration, time, or injury)? You can undo this.', 'End innings', function () {
