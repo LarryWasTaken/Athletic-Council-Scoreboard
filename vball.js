@@ -2,7 +2,7 @@
 let p1 = 0;
 let p2 = 0;
 let homeTeam = "Glenforest";
-let away = "Away";
+let away = "Lozersss";
 let setNumber = 1;
 
 // ===== TIMEOUT VARIABLES =====
@@ -83,6 +83,11 @@ let startX, startY, stopX, stopY;
 let hornX, hornY, resetX, resetY;
 let hornSound;
 
+// Hidden easter egg: hold F + A + H together to play the "that's my man" clip.
+let thatsMyManSound;
+let heldKeys = { f: false, a: false, h: false };
+let hornDelay = null;
+
 // Timer logic
 let totalMillis = 0;
 let timerRunning = false;
@@ -110,6 +115,8 @@ function setup() {
     let canvas = createCanvas(windowWidth, windowHeight);
     // Horn loads here (not in preload) so a missing/slow file can't block the whole scorer
     hornSound = loadSound('gameBuzzer.mp3', function(){}, function(){ console.warn('gameBuzzer.mp3 failed to load'); });
+    thatsMyManSound = loadSound('thatsMyMan.mp3', function(){}, function(){ console.warn('thatsMyMan.mp3 failed to load'); });
+    window.addEventListener('blur', function () { heldKeys.f = heldKeys.a = heldKeys.h = false; });
     canvas.style('display', 'block');
 
     textFont('Teko, sans-serif');
@@ -1206,6 +1213,20 @@ function isPointInRect(px, py, rx, ry, rw, rh) {
 }
 
 function keyPressed() {
+    // Hidden combo: F + A + H held together
+    var lowerKey = (typeof key === 'string') ? key.toLowerCase() : '';
+    if (lowerKey === 'f' || lowerKey === 'a' || lowerKey === 'h') {
+        heldKeys[lowerKey] = true;
+        if (heldKeys.f && heldKeys.a && heldKeys.h) {
+            if (hornDelay) { clearTimeout(hornDelay); hornDelay = null; }
+            if (hornSound && hornSound.isPlaying()) hornSound.stop();
+            if (thatsMyManSound && thatsMyManSound.isLoaded()) {
+                if (thatsMyManSound.isPlaying()) thatsMyManSound.stop();
+                thatsMyManSound.play();
+            }
+            return false;
+        }
+    }
     // Spacebar - Toggle timer
     if (key === ' ') {
         if (timerRunning) {
@@ -1219,8 +1240,13 @@ function keyPressed() {
     
     // H - Horn
     if (key === 'h' || key === 'H') {
-        if (hornSound.isPlaying()) hornSound.stop();
-        hornSound.play();
+        // Waits a split second so the horn doesn't blip when F + A + H are pressed together.
+        if (hornDelay) clearTimeout(hornDelay);
+        hornDelay = setTimeout(function () {
+            hornDelay = null;
+            if (hornSound.isPlaying()) hornSound.stop();
+            hornSound.play();
+        }, 90);
     }
     
     // R - Reset
@@ -1250,4 +1276,9 @@ function publishAudience() {
         timer: { running: timerRunning, ms: totalMillis },
         timeout: { active: timeoutActive, seconds: timeoutSecondsRemaining }
     });
+}
+
+function keyReleased() {
+    var lowerKey = (typeof key === 'string') ? key.toLowerCase() : '';
+    if (lowerKey === 'f' || lowerKey === 'a' || lowerKey === 'h') heldKeys[lowerKey] = false;
 }
