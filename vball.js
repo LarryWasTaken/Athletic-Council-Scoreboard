@@ -2,7 +2,7 @@
 let p1 = 0;
 let p2 = 0;
 let homeTeam = "Glenforest";
-let away = "Lozersss";
+let away = "Away";
 let setNumber = 1;
 
 // ===== TIMEOUT VARIABLES =====

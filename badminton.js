@@ -1,7 +1,7 @@
 let p1 = 0;
 let p2 = 0;
 let homeTeam = "Glenforest";
-let away = "Lozersss";
+let away = "Away";
 
 // Timer button dimensions
 let timerButtonWidth = 120;
