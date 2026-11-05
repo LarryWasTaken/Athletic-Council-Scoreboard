@@ -1,7 +1,7 @@
 let p1 = 0;
 let p2 = 0;
 let homeTeam = "Glenforest";
-let away = "Away";
+let away = "Lozersss";
 
 // Timer button dimensions
 let timerButtonWidth = 120;
@@ -55,12 +55,29 @@ let pressTimer = 0;
 
 function preload() {}
 
+// ---------- Responsive stage ----------
+// The scoreboard is laid out on a "stage" that is never smaller than REF_W x REF_H.
+// The canvas is then scaled (sharply, using pixelDensity) to fill whatever window it is in,
+// so it fits any laptop, monitor or projector without overlaps or cut-off cards.
+const REF_W = 1000;
+const REF_H = 720;
+
+function applyStage(create) {
+    const k = Math.max(0.1, Math.min(windowWidth / REF_W, windowHeight / REF_H));
+    const c = create ? createCanvas(windowWidth / k, windowHeight / k) : null;
+    pixelDensity(Math.min(4, k * (window.devicePixelRatio || 1)));
+    if (!create) resizeCanvas(windowWidth / k, windowHeight / k);
+    const el = document.querySelector('canvas');
+    if (el) { el.style.width = windowWidth + 'px'; el.style.height = windowHeight + 'px'; el.style.display = 'block'; }
+    return c;
+}
+
 function setup() {
     document.body.style.margin = '0';
     document.body.style.padding = '0';
     document.body.style.overflow = 'hidden';
 
-    let canvas = createCanvas(windowWidth, windowHeight);
+    let canvas = applyStage(true);
     // Horn loads here (not in preload) so a missing/slow file can't block the whole scorer
     hornSound = loadSound('gameBuzzer.mp3', function(){}, function(){ console.warn('gameBuzzer.mp3 failed to load'); });
     canvas.style('display', 'block');
@@ -75,7 +92,7 @@ function setup() {
 }
 
 function windowResized() {
-    resizeCanvas(windowWidth, windowHeight);
+    applyStage(false);
     setPositions();
 }
 
