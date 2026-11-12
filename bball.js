@@ -2,7 +2,7 @@
 let p1 = 0;
 let p2 = 0;
 let homeTeam = "Glenforest";
-let away = "Away";
+let away = "Lozersss";
 let p1Fouls = 0;
 let p2Fouls = 0;
 let currentPeriod = 1;
@@ -91,6 +91,7 @@ let hornSound;
 
 // Hidden easter egg: hold F + A + H together to play the "that's my man" clip.
 let thatsMyManSound;
+let actualManSound;   // plays when the Z key is pressed
 let heldKeys = { f: false, a: false, h: false };
 let hornDelay = null;
 
@@ -141,11 +142,31 @@ function preload() {}
 const REF_W = 1600;
 const REF_H = 720;
 
+// Phones / tablets: lighter drawing so it stays smooth (30 fps, capped sharpness, no blurred glows).
+const LITE = (function () {
+    try { return window.matchMedia('(pointer: coarse)').matches || Math.min(screen.width, screen.height) < 700; }
+    catch (e) { return false; }
+})();
+
+function killShadows() {
+    try {
+        const proto = CanvasRenderingContext2D.prototype, ctx = drawingContext;
+        ['shadowBlur', 'shadowOffsetX', 'shadowOffsetY'].forEach(function (p) {
+            const d = Object.getOwnPropertyDescriptor(proto, p);
+            Object.defineProperty(ctx, p, { configurable: true, get: function () { return d.get.call(this); }, set: function () { d.set.call(this, 0); } });
+        });
+        const dc = Object.getOwnPropertyDescriptor(proto, 'shadowColor');
+        Object.defineProperty(ctx, 'shadowColor', { configurable: true, get: function () { return dc.get.call(this); }, set: function () { dc.set.call(this, 'rgba(0,0,0,0)'); } });
+    } catch (e) {}
+}
+
 function applyStage(create) {
     const k = Math.max(0.1, Math.min(windowWidth / REF_W, windowHeight / REF_H));
     const c = create ? createCanvas(windowWidth / k, windowHeight / k) : null;
-    pixelDensity(Math.min(4, k * (window.devicePixelRatio || 1)));
+    const dpr = window.devicePixelRatio || 1;
+    pixelDensity(LITE ? Math.min(1.5, k * Math.min(dpr, 2)) : Math.min(4, k * dpr));
     if (!create) resizeCanvas(windowWidth / k, windowHeight / k);
+    if (create && LITE) { frameRate(30); killShadows(); }
     const el = document.querySelector('canvas');
     if (el) { el.style.width = windowWidth + 'px'; el.style.height = windowHeight + 'px'; el.style.display = 'block'; }
     return c;
@@ -162,6 +183,10 @@ function setup() {
     thatsMyManSound = loadSound('thatsMyMan.mp3', function(){}, function(){
         // Fallback: Windows sometimes saves the file as thatsMyMan.mp3.mp3
         thatsMyManSound = loadSound('thatsMyMan.mp3.mp3', function(){}, function(){ console.warn('thatsMyMan.mp3 failed to load'); });
+    });
+    actualManSound = loadSound('actualMan.mp3', function(){}, function(){
+        // Fallback: Windows sometimes saves the file as actualMan.mp3.mp3
+        actualManSound = loadSound('actualMan.mp3.mp3', function(){}, function(){ console.warn('actualMan.mp3 failed to load'); });
     });
     window.addEventListener('blur', function () { heldKeys.f = heldKeys.a = heldKeys.h = false; });
     canvas.style('display', 'block');
@@ -1427,6 +1452,16 @@ function isPointInRect(px, py, rx, ry, rw, rh) {
 }
 
 function keyPressed() {
+    // Z plays the "actual man" clip
+    if ((typeof key === 'string') && key.toLowerCase() === 'z') {
+        if (typeof userStartAudio === 'function') userStartAudio();
+        if (actualManSound && actualManSound.isLoaded()) {
+            if (actualManSound.isPlaying()) actualManSound.stop();
+            actualManSound.play();
+        }
+        return false;
+    }
+
     // Hidden combo: F + A + H held together
     var lowerKey = (typeof key === 'string') ? key.toLowerCase() : '';
     if (lowerKey === 'f' || lowerKey === 'a' || lowerKey === 'h') {
