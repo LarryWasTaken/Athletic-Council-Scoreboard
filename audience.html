@@ -113,6 +113,33 @@ body.idle { cursor: none; }
 }
 #timeoutBanner.low .c { color: #ff5a5a; border-color: #ef4444; }
 
+
+/* ---------- set result screen ---------- */
+#setResult {
+    position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 2.5vmin; padding: 4vmin; text-align: center;
+    background: radial-gradient(ellipse at center, #1e3a8a, #020617 75%);
+    animation: resultIn 0.5s ease-out both;
+}
+@keyframes resultIn { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: scale(1); } }
+#setResult .rTeam { max-width: 94vw; font-size: 17vmin; font-weight: 700; line-height: 1; letter-spacing: 0.03em; color: var(--gold); text-transform: uppercase; white-space: nowrap; }
+#setResult .rWon { max-width: 94vw; font-size: 8.5vmin; font-weight: 500; line-height: 1.05; letter-spacing: 0.08em; color: var(--ink, #fff); text-transform: uppercase; white-space: nowrap; }
+#setResult .rWon b { color: var(--cyan); font-weight: 700; }
+#setResult .rScore { max-width: 94vw; font-size: 26vmin; font-weight: 700; line-height: 0.95; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ---------- sound-effect caption (shown while the effect plays) ---------- */
+#sfxCaption {
+    position: fixed; left: 50%; top: 0; z-index: 70; transform: translate(-50%, 0);
+    max-width: 94vw; text-align: center; white-space: nowrap; overflow: hidden;
+    padding: 2.2vmin 5vmin 1.6vmin; border-radius: 2.4vmin;
+    background: rgba(0,0,0,0.96); border: 0.6vmin solid var(--gold);
+    box-shadow: 0 0 6vmin rgba(255,215,0,0.45);
+    font-size: 16vmin; font-weight: 700; line-height: 0.95; letter-spacing: 0.03em; color: var(--gold);
+    animation: sfxDrop 2s linear both;   /* duration is set to the length of the sound */
+}
+/* The box travels from the very top of the screen to the very bottom while the sound plays. */
+@keyframes sfxDrop { from { top: 0; transform: translate(-50%, 0); } to { top: 100%; transform: translate(-50%, -100%); } }
+
 /* ---------- waiting view ---------- */
 #waiting {
     position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -287,6 +314,14 @@ body.idle { cursor: none; }
         </div>
     </section>
 </div>
+
+<div id="setResult" hidden>
+    <div class="rTeam" id="rTeam"></div>
+    <div class="rWon">won the <b id="rSet"></b> set by</div>
+    <div class="rScore" id="rScore"></div>
+</div>
+
+<div id="sfxCaption" hidden></div>
 
 <div id="timeoutBanner" hidden>
     <div class="t">TIMEOUT</div>
@@ -555,6 +590,62 @@ body.idle { cursor: none; }
         el.classList.add('bump');
     }
 
+    // "<team> won the <set> set by <score>" screen, controlled by the scorekeeper.
+    var shownResultId = 0;
+    function fitResultLine(el) {
+        el.style.fontSize = '';
+        var avail = window.innerWidth * 0.94;
+        if (el.scrollWidth > avail) {
+            el.style.fontSize = (parseFloat(getComputedStyle(el).fontSize) * avail / el.scrollWidth * 0.97) + 'px';
+        }
+    }
+    function renderResult(state) {
+        var b = state && state.banner;
+        var box = $('setResult');
+        if (!b || !b.shown || !b.team || !b.setLabel || !b.score) { box.hidden = true; shownResultId = 0; return; }
+        $('rTeam').textContent = b.team;
+        $('rSet').textContent = b.setLabel;
+        $('rScore').textContent = b.score;
+        if (box.hidden || shownResultId !== b.id) {
+            box.hidden = false;
+            box.style.animation = 'none'; void box.offsetWidth; box.style.animation = '';
+        }
+        shownResultId = b.id;
+        ['rTeam', 'rScore'].forEach(function (id) { fitResultLine($(id)); });
+        fitResultLine(document.querySelector('#setResult .rWon'));
+    }
+    window.addEventListener('resize', function () { if (!$('setResult').hidden) renderResult(current); });
+
+    // Sound-effect caption: appears when the scorer plays a sound, disappears when the sound ends.
+    var sfxTimer = null, sfxShownId = 0;
+    function fitSfx() {
+        var box = $('sfxCaption');
+        box.style.fontSize = '';
+        var avail = window.innerWidth * 0.94 - parseFloat(getComputedStyle(box).paddingLeft) * 2;
+        if (box.scrollWidth > box.clientWidth + 1) {
+            box.style.fontSize = (parseFloat(getComputedStyle(box).fontSize) * avail / box.scrollWidth * 0.95) + 'px';
+        }
+    }
+    function renderSfx(state) {
+        var c = state && state.caption, box = $('sfxCaption');
+        var left = c ? c.ms - (Date.now() - c.id) : 0;
+        if (!c || !c.text || left <= 0) {
+            if (!c) { box.hidden = true; sfxShownId = 0; clearTimeout(sfxTimer); }
+            return;
+        }
+        if (sfxShownId === c.id) return;           // already showing this one
+        sfxShownId = c.id;
+        box.textContent = c.text;
+        box.hidden = false;
+        box.style.animation = 'none'; void box.offsetWidth; box.style.animation = '';
+        box.style.animationDuration = c.ms + 'ms';
+        box.style.animationDelay = (-(c.ms - left)) + 'ms';     // joins mid-fall if the message arrived late
+        fitSfx();
+        clearTimeout(sfxTimer);
+        sfxTimer = setTimeout(function () { box.hidden = true; }, left);
+    }
+    window.addEventListener('resize', function () { if (!$('sfxCaption').hidden) fitSfx(); });
+
     function render(state) {
         var usable = state && SPORT[state.sport] && (Date.now() - state.savedAt) < STALE_MS;
         if (!usable) {
@@ -562,12 +653,15 @@ body.idle { cursor: none; }
             $('match').hidden = true;
             $('cricket').hidden = true; $('cScorecard').hidden = true;
             $('timeoutBanner').hidden = true;
+            $('setResult').hidden = true; shownResultId = 0;
             $('waiting').hidden = false;
             document.title = 'Glenforest Audience Display';
             return;
         }
         current = state;
         var cfg = SPORT[state.sport];
+        renderResult(state);
+        renderSfx(state);
 
         $('waiting').hidden = true;
         $('match').hidden = false;

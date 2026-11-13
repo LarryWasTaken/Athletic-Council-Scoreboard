@@ -2,7 +2,7 @@
 let p1 = 0;
 let p2 = 0;
 let homeTeam = "Glenforest";
-let away = "Lozersss";
+let away = "Away";
 let setNumber = 1;
 
 // ===== TIMEOUT VARIABLES =====
@@ -85,7 +85,16 @@ let hornSound;
 
 // Hidden easter egg: hold F + A + H together to play the "that's my man" clip.
 let thatsMyManSound;
-let actualManSound;   // plays when the Z key is pressed
+let setResultUI = null;       // editor for the "<team> won the <set> set by <score>" screen
+let setResultBanner = null;   // what the audience screen is currently told to show
+let actualManSound;
+let sfxCaption = null;        // text the audience screen shows while a sound effect plays
+
+// Show "text" on the audience screen for exactly as long as the sound lasts.
+function showSfxCaption(text, snd) {
+    var secs = (snd && typeof snd.duration === 'function') ? snd.duration() : 0;
+    sfxCaption = { text: text, id: Date.now(), ms: secs > 0 ? Math.round(secs * 1000) : 2500 };
+}   // plays when the Z key is pressed
 let heldKeys = { f: false, a: false, h: false };
 let hornDelay = null;
 
@@ -161,6 +170,12 @@ function setup() {
         // Fallback: Windows sometimes saves the file as actualMan.mp3.mp3
         actualManSound = loadSound('actualMan.mp3.mp3', function(){}, function(){ console.warn('actualMan.mp3 failed to load'); });
     });
+    if (window.AudienceSync && AudienceSync.mountSetResult) {
+        setResultUI = AudienceSync.mountSetResult({
+            getContext: function () { return { home: homeTeam, away: away, p1: p1, p2: p2, set: setNumber }; },
+            onChange: function (b) { setResultBanner = b; }
+        });
+    }
     window.addEventListener('blur', function () { heldKeys.f = heldKeys.a = heldKeys.h = false; });
     canvas.style('display', 'block');
 
@@ -1105,6 +1120,7 @@ function mousePressed() {
     if (isPointInRect(mouseX, mouseY, resetX, resetY, timerButtonWidth, timerButtonHeight)) {
         pressedButton = `timer-${resetX}-${resetY}`;
         pressTimer = 10;
+        if (setResultUI) setResultUI.hide();
         p1 = 0;
         p2 = 0;
         totalMillis = 0;
@@ -1140,7 +1156,10 @@ function mousePressed() {
     if (isPointInRect(mouseX, mouseY, setPlusX, setPlusY, 50, 35)) {
         pressedButton = `set-${setPlusX}-${setPlusY}`; 
         pressTimer = 10;
+        var finishedSet = setNumber;
         setNumber++;
+        // A set just ended: offer the "won the set" screen (pre-filled, editable) unless the board is at 0-0.
+        if (setResultUI && (p1 > 0 || p2 > 0)) setResultUI.open(finishedSet);
         setGlow = 100;       // start glow
         setGlowColor = "gold"; 
         setScaleAnim = 1.0;  // bounce animation
@@ -1264,6 +1283,7 @@ function keyPressed() {
         if (actualManSound && actualManSound.isLoaded()) {
             if (actualManSound.isPlaying()) actualManSound.stop();
             actualManSound.play();
+            showSfxCaption("THAT'S MY MANNNN", actualManSound);
         }
         return false;
     }
@@ -1279,6 +1299,7 @@ function keyPressed() {
             if (thatsMyManSound && thatsMyManSound.isLoaded()) {
                 if (thatsMyManSound.isPlaying()) thatsMyManSound.stop();
                 thatsMyManSound.play();
+                showSfxCaption('FAHHHHH', thatsMyManSound);
             }
             return false;
         }
@@ -1325,12 +1346,15 @@ function keyPressed() {
 // Sends the current match state to the audience display window (read-only mirror).
 function publishAudience() {
     if (!window.AudienceSync) return;
+    if (sfxCaption && Date.now() >= sfxCaption.id + sfxCaption.ms) sfxCaption = null;   // sound finished
     AudienceSync.publish('volleyball', {
         home: { name: homeTeam, score: p1, timeouts: p1Timeouts },
         away: { name: away, score: p2, timeouts: p2Timeouts },
         period: setNumber,
         timer: { running: timerRunning, ms: totalMillis },
-        timeout: { active: timeoutActive, seconds: timeoutSecondsRemaining }
+        timeout: { active: timeoutActive, seconds: timeoutSecondsRemaining },
+        banner: setResultBanner,
+        caption: sfxCaption
     });
 }
 

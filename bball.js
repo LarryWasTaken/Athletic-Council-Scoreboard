@@ -2,7 +2,7 @@
 let p1 = 0;
 let p2 = 0;
 let homeTeam = "Glenforest";
-let away = "Lozersss";
+let away = "Away";
 let p1Fouls = 0;
 let p2Fouls = 0;
 let currentPeriod = 1;
@@ -91,7 +91,14 @@ let hornSound;
 
 // Hidden easter egg: hold F + A + H together to play the "that's my man" clip.
 let thatsMyManSound;
-let actualManSound;   // plays when the Z key is pressed
+let actualManSound;
+let sfxCaption = null;        // text the audience screen shows while a sound effect plays
+
+// Show "text" on the audience screen for exactly as long as the sound lasts.
+function showSfxCaption(text, snd) {
+    var secs = (snd && typeof snd.duration === 'function') ? snd.duration() : 0;
+    sfxCaption = { text: text, id: Date.now(), ms: secs > 0 ? Math.round(secs * 1000) : 2500 };
+}   // plays when the Z key is pressed
 let heldKeys = { f: false, a: false, h: false };
 let hornDelay = null;
 
@@ -1458,6 +1465,7 @@ function keyPressed() {
         if (actualManSound && actualManSound.isLoaded()) {
             if (actualManSound.isPlaying()) actualManSound.stop();
             actualManSound.play();
+            showSfxCaption("THAT'S MY MANNNN", actualManSound);
         }
         return false;
     }
@@ -1473,6 +1481,7 @@ function keyPressed() {
             if (thatsMyManSound && thatsMyManSound.isLoaded()) {
                 if (thatsMyManSound.isPlaying()) thatsMyManSound.stop();
                 thatsMyManSound.play();
+                showSfxCaption('FAHHHHH', thatsMyManSound);
             }
             return false;
         }
@@ -1531,12 +1540,14 @@ function keyPressed() {
 // Sends the current match state to the audience display window (read-only mirror).
 function publishAudience() {
     if (!window.AudienceSync) return;
+    if (sfxCaption && Date.now() >= sfxCaption.id + sfxCaption.ms) sfxCaption = null;   // sound finished
     AudienceSync.publish('basketball', {
         home: { name: homeTeam, score: p1, fouls: p1Fouls, timeouts: p1Timeouts },
         away: { name: away, score: p2, fouls: p2Fouls, timeouts: p2Timeouts },
         period: p1Sets,
         timer: { running: timerRunning, ms: totalMillis },
-        timeout: { active: timeoutActive, seconds: timeoutSecondsRemaining }
+        timeout: { active: timeoutActive, seconds: timeoutSecondsRemaining },
+        caption: sfxCaption
     });
 }
 
