@@ -187,6 +187,7 @@ function setup() {
     let canvas = applyStage(true);
     // Horn loads here (not in preload) so a missing/slow file can't block the whole scorer
     hornSound = loadSound('gameBuzzer.mp3', function(){}, function(){ console.warn('gameBuzzer.mp3 failed to load'); });
+    sixSevenSound = loadSound('67.mp3', function(){}, function(){ sixSevenSound = loadSound('67.mp3.mp3', function(){}, function(){ console.warn('67.mp3 failed to load'); }); });
     thatsMyManSound = loadSound('thatsMyMan.mp3', function(){}, function(){
         // Fallback: Windows sometimes saves the file as thatsMyMan.mp3.mp3
         thatsMyManSound = loadSound('thatsMyMan.mp3.mp3', function(){}, function(){ console.warn('thatsMyMan.mp3 failed to load'); });
@@ -332,7 +333,21 @@ function setTimeoutPositions() {
     setSetCardPositions();
 }
 
+let sixSevenSound;
+let lastSixSevenState = false;
+
+function checkSixSeven() {
+    var hit = (p1 === 6 && p2 === 7) || (p1 === 7 && p2 === 6);
+    if (hit && !lastSixSevenState && sixSevenSound && sixSevenSound.isLoaded()) {
+        if (typeof userStartAudio === 'function') userStartAudio();
+        if (sixSevenSound.isPlaying()) sixSevenSound.stop();
+        sixSevenSound.play();
+    }
+    lastSixSevenState = hit;
+}
+
 function draw() {
+    checkSixSeven();
     publishAudience();
     // Background gradient
     let gradBg = drawingContext.createLinearGradient(0, 0, width, height);

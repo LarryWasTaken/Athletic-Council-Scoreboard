@@ -1,7 +1,7 @@
 let p1 = 0;
 let p2 = 0;
 let homeTeam = "Glenforest";
-let away = "Away";
+let away = "Lozersss";
 
 // Timer button dimensions
 let timerButtonWidth = 120;
@@ -62,11 +62,31 @@ function preload() {}
 const REF_W = 1000;
 const REF_H = 720;
 
+// Phones / tablets: lighter drawing so it stays smooth (30 fps, capped sharpness, no blurred glows).
+const LITE = (function () {
+    try { return window.matchMedia('(pointer: coarse)').matches || Math.min(screen.width, screen.height) < 700; }
+    catch (e) { return false; }
+})();
+
+function killShadows() {
+    try {
+        const proto = CanvasRenderingContext2D.prototype, ctx = drawingContext;
+        ['shadowBlur', 'shadowOffsetX', 'shadowOffsetY'].forEach(function (p) {
+            const d = Object.getOwnPropertyDescriptor(proto, p);
+            Object.defineProperty(ctx, p, { configurable: true, get: function () { return d.get.call(this); }, set: function () { d.set.call(this, 0); } });
+        });
+        const dc = Object.getOwnPropertyDescriptor(proto, 'shadowColor');
+        Object.defineProperty(ctx, 'shadowColor', { configurable: true, get: function () { return dc.get.call(this); }, set: function () { dc.set.call(this, 'rgba(0,0,0,0)'); } });
+    } catch (e) {}
+}
+
 function applyStage(create) {
     const k = Math.max(0.1, Math.min(windowWidth / REF_W, windowHeight / REF_H));
     const c = create ? createCanvas(windowWidth / k, windowHeight / k) : null;
-    pixelDensity(Math.min(4, k * (window.devicePixelRatio || 1)));
+    const dpr = window.devicePixelRatio || 1;
+    pixelDensity(LITE ? Math.min(1.5, k * Math.min(dpr, 2)) : Math.min(4, k * dpr));
     if (!create) resizeCanvas(windowWidth / k, windowHeight / k);
+    if (create && LITE) { frameRate(30); killShadows(); }
     const el = document.querySelector('canvas');
     if (el) { el.style.width = windowWidth + 'px'; el.style.height = windowHeight + 'px'; el.style.display = 'block'; }
     return c;
@@ -80,6 +100,7 @@ function setup() {
     let canvas = applyStage(true);
     // Horn loads here (not in preload) so a missing/slow file can't block the whole scorer
     hornSound = loadSound('gameBuzzer.mp3', function(){}, function(){ console.warn('gameBuzzer.mp3 failed to load'); });
+    sixSevenSound = loadSound('67.mp3', function(){}, function(){ sixSevenSound = loadSound('67.mp3.mp3', function(){}, function(){ console.warn('67.mp3 failed to load'); }); });
     canvas.style('display', 'block');
 
     textFont('Teko, sans-serif');
@@ -158,7 +179,21 @@ function setPositions() {
     team2_btn_minus1_Y = card2Y + buttonRowY;
 }
 
+let sixSevenSound;
+let lastSixSevenState = false;
+
+function checkSixSeven() {
+    var hit = (p1 === 6 && p2 === 7) || (p1 === 7 && p2 === 6);
+    if (hit && !lastSixSevenState && sixSevenSound && sixSevenSound.isLoaded()) {
+        if (typeof userStartAudio === 'function') userStartAudio();
+        if (sixSevenSound.isPlaying()) sixSevenSound.stop();
+        sixSevenSound.play();
+    }
+    lastSixSevenState = hit;
+}
+
 function draw() {
+    checkSixSeven();
     publishAudience();
     // Background gradient
     let gradBg = drawingContext.createLinearGradient(0, 0, width, height);
